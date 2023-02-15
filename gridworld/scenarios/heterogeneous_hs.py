@@ -6,19 +6,19 @@ import pandas as pd
 
 from gridworld import MultiComponentEnv
 from gridworld import MultiAgentEnv
-from gridworld.agents.buildings import FiveZoneROMThermalEnergyEnv
+
 from gridworld.agents.pv import PVEnv
 from gridworld.agents.energy_storage import EnergyStorageEnv
 from gridworld.agents.vehicles import EVChargingEnv
-from gridworld.distribution_system import OpenDSSSolver
+from gridworld.agents.hvac import HVACEnv
 
 
 def make_env_config( rescale_spaces=True):
 
     # Make the multi-component building
-    house_components = [ ]
+    
 
-    house_components.append({
+    pv = {
         "name": "pv",
         "cls": PVEnv,
         "config": {
@@ -26,8 +26,9 @@ def make_env_config( rescale_spaces=True):
             "scaling_factor": 40.,
             "rescale_spaces": rescale_spaces
         }
-    })
-    house_components.append({
+    }
+
+    battery = {
         "name": "storage",
         "cls": EnergyStorageEnv,
         "config": {
@@ -35,11 +36,35 @@ def make_env_config( rescale_spaces=True):
             "storage_range": (3., 250.),
             "rescale_spaces": rescale_spaces
         } 
-    })
+    }
+
+    ev = {
+            "name": "ev-charging",
+            "cls": EVChargingEnv,
+            "config": {
+                "num_vehicles": 25,
+                "minutes_per_step": 5,
+                "max_charge_rate_kw": 7.,
+                "peak_threshold": 200.,
+                "vehicle_multiplier": 40.,
+                "rescale_spaces": rescale_spaces
+            }
+        }
+
+    hvac = {
+        "name": "storage",
+        "cls": HVACEnv,
+        "config": {
+            "max_power": 20.,
+            "storage_range": (3., 250.),
+            "rescale_spaces": rescale_spaces
+        } 
+    }
 
 
 
 
+    house_components = [pv, battery ]
 
 
 
