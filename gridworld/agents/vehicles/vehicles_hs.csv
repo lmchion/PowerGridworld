@@ -1,0 +1,3 @@
+,event,start_time_days,end_time_days,end_time_park_days,energy_required_kwh,max_charge_rate_kw,start_time_min,end_time_min,end_time_park_min
+0,1,0,0.166666667,0.333333333,8,11,0,240,480
+1,2,0.833333333,0.916666667,1,12,11,1200,1320,1440
