@@ -40,20 +40,9 @@ def make_env_config( rescale_spaces=True):
 
     # Make the multi-component building
 
-    class HSPVEnv(PVEnv):
-        
-
-        def get_obs(self, **kwargs):
-
-            obs, obs_meta = super().__init__( **kwargs)
-            obs_meta['cost'] = 0.0
-
-            return obs, obs_meta 
-
-
     pv = {
         "name": "pv",
-        "cls": HSPVEnv,
+        "cls": PVEnv,
         "config": {
             "profile_csv": "pv_profile_hs.csv",
             "scaling_factor": 40.,
@@ -110,7 +99,12 @@ def make_env_config( rescale_spaces=True):
                  "start_time"       : "08-31-2020 00:00:00",
                  "end_time"         : "08-31-2020 23:55:00",
                  "control_timedelta": pd.Timedelta(300, "s"),
+                 'max_grid_power'   :  48
                    }
     env_config['grid_cost']=load_grid_cost(env_config['start_time'],env_config['end_time'] )
 
     return env_config
+
+
+
+
