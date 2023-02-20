@@ -40,6 +40,8 @@ def make_env_config( rescale_spaces=True):
 
     # Make the multi-component building
 
+    grid_cost=load_grid_cost(env_config['start_time'],env_config['end_time'] )
+
     pv = {
         "name": "pv",
         "cls": PVEnv,
@@ -61,7 +63,9 @@ def make_env_config( rescale_spaces=True):
             "charge_efficiency"         : 0.95,
             "discharge_efficiency"      : 0.95,
             "init_storage"              : 0.0,
-            "rescale_spaces"            : rescale_spaces
+            "rescale_spaces"            : rescale_spaces,
+            'initial_storage_cost'      : min(grid_cost),
+            'max_storage_cost'          : max(grid_cost)
         } 
     }
 
@@ -99,9 +103,10 @@ def make_env_config( rescale_spaces=True):
                  "start_time"       : "08-31-2020 00:00:00",
                  "end_time"         : "08-31-2020 23:55:00",
                  "control_timedelta": pd.Timedelta(300, "s"),
-                 'max_grid_power'   :  48
+                 'max_grid_power'   :  48,
+                 
                    }
-    env_config['grid_cost']=load_grid_cost(env_config['start_time'],env_config['end_time'] )
+    env_config['grid_cost']=grid_cost
 
     return env_config
 
