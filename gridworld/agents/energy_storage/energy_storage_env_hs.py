@@ -83,8 +83,10 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
         else:
             obs = raw_obs
 
-
-        return obs, {'state_of_charge' : meta['state_of_charge'], 'cost_of_charge' : self.current_cost   }
+        meta ={'state_of_charge' : meta['state_of_charge'], 'cost_of_charge' : self.current_cost   }
+        meta.update(kwargs)
+        
+        return obs, meta
     
     def step_reward(self,**kwargs):
 
@@ -122,6 +124,7 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
 
             # first, take solar energy - the cheapest
             solar_power=min(-power,solar_capacity)
+            kwargs['power'][kwargs['labels'].index('pv')]=solar_capacity-solar_power
             # the rest, use the grid
             grid_power=min( 0.0, solar_power +power )
             
@@ -142,7 +145,7 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
         #  Convert to the positive for load and  negative for generation convention.
         self._real_power = -power
 
-        obs, obs_meta = self.get_obs()
+        obs, obs_meta = self.get_obs(**kwargs)
         rew, _ = self.step_reward()
 
         self.simulation_step += 1
