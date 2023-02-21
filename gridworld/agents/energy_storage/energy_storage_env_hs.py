@@ -85,7 +85,7 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
 
         meta ={'state_of_charge' : meta['state_of_charge'], 'cost_of_charge' : self.current_cost   }
         meta.update(kwargs)
-        
+
         return obs, meta
     
     def step_reward(self,**kwargs):
@@ -118,15 +118,15 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
         grid_cost=kwargs['cost'][kwargs['labels'].index('grid')]                                    
             
         
-        # power positive negative is charging
-        if power < 0.0:
+        
+        if power < 0.0:  # power negative is charging
             delta_storage = self.charge_efficiency * power * self.control_interval_in_hr
 
             # first, take solar energy - the cheapest
             solar_power=min(-power,solar_capacity)
-            kwargs['power'][kwargs['labels'].index('pv')]=solar_capacity-solar_power
+            
             # the rest, use the grid
-            grid_power=min( 0.0, solar_power +power )
+            grid_power=min( 0.0, -power - solar_power  )
             
             # calculate the weighted average cost of charging for the time interval
             self.delta_cost = (solar_cost*solar_power + grid_cost*grid_power) / (solar_power+ grid_power)
@@ -138,9 +138,16 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
             # In case of small numerical error:
             self.current_storage = min(self.current_storage, self.storage_range[1])
 
-        elif power > 0.0:
+            kwargs['power'][kwargs['labels'].index('pv')]=solar_capacity-solar_power
+            kwargs['power'][kwargs['labels'].index('es')]=0.0
+
+
+        elif power > 0.0:  # power negative is discharging
             self.current_storage -= power * self.control_interval_in_hr / self.discharge_efficiency
             self.current_storage = max(self.current_storage, self.storage_range[0])
+            kwargs['power'][kwargs['labels'].index('es')]=power
+
+        kwargs['cost'][kwargs['labels'].index('es')]=self.current_cost
 
         #  Convert to the positive for load and  negative for generation convention.
         self._real_power = -power
