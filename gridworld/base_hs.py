@@ -1,3 +1,5 @@
+import os
+import pandas as pd
 
 from abc import ABC, abstractmethod
 from copy import deepcopy
@@ -15,82 +17,61 @@ from gridworld.agents.energy_storage import EnergyStorageEnv
 from gridworld.agents.vehicles import EVChargingEnv
 from gridworld.agents.hvac import HVACEnv
 
-
 class HSMultiComponentEnv(MultiComponentEnv):
-    """Class for creating a single Gym environment from multiple component 
-    environments.  The action and observation spaces of the multi-component env
+    """
+    Class representing a multicomponent enviroment of the Home energy steward.
+    The action and observation spaces of the multi-component env
     are taken as the union over the components.
+    
     """
 
     def __init__(
-            self, 
-            name: str = None,
-            components: List[dict] = None,
+            self,
+            common_config: dict = {},
+            env_config: dict = {},
+            # rescale_spaces: bool = True,
             **kwargs
-        ):
+    ):
 
-        super().__init__(name=name, components=components, **kwargs)
+        super().__init__(name=common_config.name, components=env_config.components, **kwargs)
 
-        self.grid_cost=kwargs['grid_cost']
+        # get grid costs and find the maximum grid cost 
+        self._grid_cost_data = env_config.grid_cost
 
-        # max_power={ 'grid': kwargs['max_grid_power'] }
-        # max_grid_cost=max(kwargs['grid_cost'])
+        self._observation_space["grid_cost"] = gym.spaces.Box(shape=(1,), low=0.0, high=max(self.grid_cost_data), dtype=np.float64)
+        self._obs_labels += ["grid_cost"]
 
-        # for env in super().envs:
-        #     if env["cls"]==EnergyStorageEnv:
-        #         max_power['es']=env.max_power
-
-        #     if env["cls"]==PVEnv:
-        #         max_power['pv']=env._observation_space.high[0]
-
-        # obs_space=super().observation_space.spaces
-
-        
-
-        # self.add_obs_space= { 'grid_cost'  : gym.spaces.Box( shape=(1,), low=0.0, high=max_grid_cost, dtype=np.float64),
-        #                       'pv_cost'    : gym.spaces.Box( shape=(1,), low=0.0, high=0.0, dtype=np.float64),
-        #                       'es_cost'    : gym.spaces.Box( shape=(1,), low=0.0, high=max_grid_cost, dtype=np.float64),
-        #                       'grid_power' : gym.spaces.Box( shape=(1,), low=0.0, high=max_power['grid'], dtype=np.float64),
-        #                       'pv_power'   : gym.spaces.Box( shape=(1,), low=0.0, high=max_power['es'], dtype=np.float64),
-        #                       'es_power'   : gym.spaces.Box( shape=(1,), low=0.0, high=max_power['pv'], dtype=np.float64) }
-                             
-                                                     
-        # obs_space=obs_space.update(self.add_obs_space)                                         
-        # self.observation_space = gym.spaces.Dict(obs_space)
-
-        self.state = {'grid_cost'  : None,
-                      'pv_cost'    : 0.0,
-                      'es_cost'    : None,
-                      'grid_power' : kwargs['max_grid_power'],
-                      'pv_power'   : None,
-                      'es_power'   : None }
-
+        # Action spaces from the component envs are combined into the composite space in super.__init__
 
 
     def reset(self, **kwargs) -> dict:
-        self.time_index=0
-        
-        obs,meta=super().reset(**kwargs)
+        self.time_index = 0
 
-        self.state['grid_cost']=self.grid_cost[self.time_index]
+        # reset the state of all subcomponents and collect the initialization state from each.
+        obs, meta = super().reset(**kwargs)
 
-        for env in self.envs:
-            if type(env)==EnergyStorageEnv:
-                self.state['es_power']=env.current_storage
-                self.state['es_cost']=0.0  # need to complete the initial cost calculation
+        # Start an episode with grid cost of 0.
+        obs["grid_cost"] = 0
 
-            if type(env)==PVEnv:
-                  self.state['pv_power']=meta[env.name]['real_power']
-                
         return obs,meta        
+
+    def get_obs(self, **kwargs) -> Tuple[dict, dict]:
+        """
+        Get composite observation from base and update grid cost observation.
+        """
+
+        obs, meta = super().get_obs(**kwargs)
+        # Start an episode with grid cost of 0.
+        obs["grid_cost"] = self._grid_cost_data[self.time_index]
+
+        return obs, meta
 
   
     def step(self, action: dict, **kwargs) -> Tuple[dict, float, bool, dict]:
         """Default step method composes the obs, reward, done, meta dictionaries
         from each component step."""
 
-        self.time_index +=1
-        self.state['grid_cost']=self.grid_cost[self.time_index]
+        self.time_index += 1
 
         # Initialize outputs.
         real_power = 0.
@@ -98,39 +79,34 @@ class HSMultiComponentEnv(MultiComponentEnv):
         dones = []
         metas = {}
 
+        kwargs_copy = {k: v for k,v in kwargs.items()}
+
         # Loop over envs and collect real power injection/consumption.
         for env in self.envs:
-            env_kwargs = {k: v for k,v in kwargs.items() if k in env.obs_labels}
-            env_kwargs.update(self.state)
-            ob, _, done, meta = env.step(action[env.name], **env_kwargs)
-            obs[env.name] = ob.copy()
-            dones.append(done)
-            metas[env.name] = meta.copy()
+            env_kwargs = {k: v for k,
+                          v in kwargs_copy.items() if k in env._obs_labels}
+            
+            subcomp_obs, _, subcomp_done, subcomp_meta = env.step(action[env.name], **env_kwargs)
+            obs[env.name] = subcomp_obs.copy()
+            dones.append(subcomp_done)
+            metas[env.name] = subcomp_meta.copy()
             real_power += env.real_power
+
+            # Intermediate state update to ensure there is no resource contention
+            # after each component step the intermediate state is updated into the 
+            # copy of kwargs and is provided to the next component in line.
+            # The order of devices in the line is arbitrarily defined in `heterogenous_hs.py`
+            # where the component list is built.
+            
+            for subcomp_obs_key, subcomp_obs_val in subcomp_obs.items():
+                kwargs_copy[subcomp_obs_key] = subcomp_obs_val
 
         # Set real power attribute.  TODO:  Reactive power.
         self._real_power = real_power
 
         # Compute the step reward using user-implemented method.
-        step_reward, _ = super().step_reward()
-        
+        step_reward, _ = self.step_reward()
+
         return obs, step_reward, any(dones), metas
     
-
-
-
-
-    def get_obs(self, **kwargs) -> Tuple[dict, dict]:
-        """Default get obs composes a dictionary of observations from each 
-        component env."""
-
-        # Initialize outputs.
-        obs = {}
-        meta = {}
-
-        # Loop over envs and create the observation dict (of dicts).
-        for env in self.envs:
-            env_kwargs = {k: v for k,v in kwargs.items() if k in env.obs_labels}
-            obs[env.name], meta[env.name] = env.get_obs(**env_kwargs)
-
-        return obs, meta
+    # step reward from the base environment definition continues to apply to this env as well.

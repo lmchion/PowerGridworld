@@ -40,8 +40,6 @@ def make_env_config( rescale_spaces=True):
 
     # Make the multi-component building
 
-    grid_cost=load_grid_cost(env_config['start_time'],env_config['end_time'] )
-
     pv = {
         "name": "pv",
         "cls": PVEnv,
@@ -94,7 +92,7 @@ def make_env_config( rescale_spaces=True):
 
 
 
-
+    # this defines the arbitrary order of devices and the action that they take in the composite environment.
     house_components = [pv, battery, ev ]
 
 
@@ -105,8 +103,10 @@ def make_env_config( rescale_spaces=True):
                  "control_timedelta": pd.Timedelta(300, "s"),
                  'max_grid_power'   :  48,
                  
-                   }
-    env_config['grid_cost']=grid_cost
+                }
+
+    grid_cost = load_grid_cost(env_config['start_time'], env_config['end_time'])
+    env_config['grid_cost'] = grid_cost
 
     return env_config
 
