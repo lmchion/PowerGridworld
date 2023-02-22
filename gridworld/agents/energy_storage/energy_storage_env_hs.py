@@ -83,20 +83,20 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
         else:
             obs = raw_obs
 
-        meta ={'state_of_charge' : meta['state_of_charge'], 'cost_of_charge' : self.current_cost   }
+        meta ={'state_of_charge' : meta['state_of_charge'] }
         meta.update(kwargs)
 
         return obs, meta
     
     def step_reward(self,**kwargs):
 
-        # when real power positive is charging!!!!
-        if self._real_power < 0 :
+        
+        if self._real_power < 0 :  # discharging
             es_reward = 0.0  # when it is negative, the battery becomes a producer SO no reward
             reward_meta = {}
         else:  # charging
             # es_reward = cost of charging (solar + grid) $/Kwh * efficiency % * power (Kw) * time (h)
-            es_reward = self.delta_cost* self.charge_efficiency * self.power * self.control_interval_in_hr
+            es_reward = self.delta_cost* self.charge_efficiency * self._real_power * self.control_interval_in_hr
             reward_meta = {}
 
         #the reward has to be negative so higher reward for less cost
@@ -129,10 +129,10 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
             grid_power=min( 0.0, -power - solar_power  )
             
             # calculate the weighted average cost of charging for the time interval
-            self.delta_cost = (solar_cost*solar_power + grid_cost*grid_power) / (solar_power+ grid_power)
+            self.delta_cost = (solar_cost*solar_power + grid_cost*grid_power)  / (solar_power+ grid_power)
 
             # update the current cost
-            self.current_cost = (self.current_storage * self.current_cost - delta_storage * self.delta_cost)/ ( self.current_storage - delta_storage  )
+            self.current_cost = (self.current_storage  * self.current_cost - delta_storage * self.delta_cost)/ ( self.current_storage - delta_storage  )
 
             self.current_storage -= delta_storage
             # In case of small numerical error:
@@ -142,10 +142,10 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
             kwargs['power'][kwargs['labels'].index('es')]=0.0
 
 
-        elif power > 0.0:  # power negative is discharging
+        elif power > 0.0:  # power positive is discharging
             self.current_storage -= power * self.control_interval_in_hr / self.discharge_efficiency
             self.current_storage = max(self.current_storage, self.storage_range[0])
-            kwargs['power'][kwargs['labels'].index('es')]=power
+            kwargs['power'][kwargs['labels'].index('es')]=power 
 
         kwargs['cost'][kwargs['labels'].index('es')]=self.current_cost
 

@@ -29,7 +29,7 @@ class HSEVChargingEnv(EVChargingEnv):
 
         reward = self.current_cost * self._real_power + kwargs['cost'][kwargs['labels'].index('grid')] * self.state["real_power_unserved"]   
 
-        return reward, {}
+        return -reward, {}
    
     def step(self, action: np.ndarray = None, **kwargs) -> Tuple[np.ndarray, float, bool, dict]:
 
