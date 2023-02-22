@@ -102,7 +102,8 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
         #the reward has to be negative so higher reward for less cost
         return -es_reward, reward_meta
 
-    
+     
+     
     def step(self, action: np.ndarray, **kwargs):
         """ Implement control to the storage.
         """

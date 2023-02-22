@@ -10,7 +10,7 @@ from gridworld import MultiAgentEnv
 from gridworld.agents.pv import PVEnv
 from gridworld.agents.energy_storage import EnergyStorageEnv
 from gridworld.agents.vehicles import EVChargingEnv
-from gridworld.agents.hvac import HVACEnv
+
 import os
 
 
@@ -38,8 +38,10 @@ def load_grid_cost(start_time: str = None, end_time: str = None) -> list:
 
 def make_env_config( rescale_spaces=True):
 
+    start_time="08-31-2020 00:00:00"
+    end_time="08-31-2020 23:55:00"
     # Make the multi-component building
-
+    grid_cost = load_grid_cost(start_time, end_time)
     pv = {
         "name": "pv",
         "cls": PVEnv,
@@ -80,15 +82,7 @@ def make_env_config( rescale_spaces=True):
             }
         }
 
-    hvac = {
-        "name": "storage",
-        "cls": HVACEnv,
-        "config": {
-            "max_power": 20.,
-            "storage_range": (3., 250.),
-            "rescale_spaces": rescale_spaces
-        } 
-    }
+
 
 
 
@@ -98,14 +92,16 @@ def make_env_config( rescale_spaces=True):
 
 
     env_config={ "components"       : house_components,
-                 "start_time"       : "08-31-2020 00:00:00",
-                 "end_time"         : "08-31-2020 23:55:00",
+                 "name"             : 'house',
+                 "start_time"       : start_time,
+                 "end_time"         : end_time,
                  "control_timedelta": pd.Timedelta(300, "s"),
                  'max_grid_power'   :  48,
+                 'max_episode_steps' : 288
                  
                 }
 
-    grid_cost = load_grid_cost(env_config['start_time'], env_config['end_time'])
+    
     env_config['grid_cost'] = grid_cost
 
     return env_config

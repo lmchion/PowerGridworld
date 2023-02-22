@@ -15,7 +15,7 @@ from gridworld import MultiComponentEnv
 from gridworld.agents.pv import PVEnv
 from gridworld.agents.energy_storage import EnergyStorageEnv
 from gridworld.agents.vehicles import EVChargingEnv
-from gridworld.agents.hvac import HVACEnv
+
 
 class HSMultiComponentEnv(MultiComponentEnv):
     """
@@ -27,19 +27,25 @@ class HSMultiComponentEnv(MultiComponentEnv):
 
     def __init__(
             self,
-            common_config: dict = {},
-            env_config: dict = {},
+            #common_config: dict = {},
+            #env_config: dict = {},
+            name : str = None,
+            components: dict = {},
+            max_episode_steps: int = None,
             # rescale_spaces: bool = True,
             **kwargs
     ):
 
-        super().__init__(name=common_config.name, components=env_config.components, **kwargs)
+        #super().__init__(name=common_config.name, components=env_config.components, **kwargs)
+        super().__init__(name=name, components=components, **kwargs)
 
         # get grid costs and find the maximum grid cost 
-        self._grid_cost_data = env_config.grid_cost
+        self.grid_cost_data = kwargs['grid_cost']
 
-        self._observation_space["grid_cost"] = gym.spaces.Box(shape=(1,), low=0.0, high=max(self.grid_cost_data), dtype=np.float64)
+        self.observation_space["grid_cost"] = gym.spaces.Box(shape=(1,), low=0.0, high=max(self.grid_cost_data), dtype=np.float64)
         self._obs_labels += ["grid_cost"]
+
+        self.max_episode_steps = max_episode_steps if max_episode_steps is not None else np.inf
 
         # Action spaces from the component envs are combined into the composite space in super.__init__
 
@@ -62,7 +68,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
 
         obs, meta = super().get_obs(**kwargs)
         # Start an episode with grid cost of 0.
-        obs["grid_cost"] = self._grid_cost_data[self.time_index]
+        obs["grid_cost"] = self.grid_cost_data[self.time_index]
 
         return obs, meta
 

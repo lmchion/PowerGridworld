@@ -13,9 +13,9 @@ from gridworld.scenarios.heterogeneous_hs import make_env_config
 def env_creator(config: dict):
     """Simple wrapper that takes a config dict and returns an env instance."""
     
-    from gridworld import MultiComponentEnv
+    from gridworld import HSMultiComponentEnv
 
-    return MultiComponentEnv(**config)
+    return HSMultiComponentEnv(**config)
 
 
 def main(**args):
@@ -104,7 +104,7 @@ def main(**args):
             "multiagent": {
                 "policies": {
                     agent_id: (None, obs_space[agent_id], act_space[agent_id], {}) 
-                        for agent_id in obs_space
+                        for agent_id in obs_space 
                 },
                 "policy_mapping_fn": (lambda agent_id: agent_id)
             },
