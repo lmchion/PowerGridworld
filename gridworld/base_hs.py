@@ -37,6 +37,8 @@ class HSMultiComponentEnv(MultiComponentEnv):
         self.observation_space["grid_cost"] = gym.spaces.Box(shape=(1,), low=0.0, high=max(self._grid_cost_data), dtype=np.float64)
         self._obs_labels += ["grid_cost"]
 
+        self.max_episode_steps = max_episode_steps if max_episode_steps is not None else np.inf
+
         # Action spaces from the component envs are combined into the composite space in super.__init__
 
     def reset(self, **kwargs) -> dict:
