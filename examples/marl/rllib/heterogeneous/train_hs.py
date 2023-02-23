@@ -101,13 +101,13 @@ def main(**args):
             "env_config": env_config,
             "num_gpus": args["num_gpus"],
             "num_workers": num_workers,
-            "multiagent": {
-                "policies": {
-                    agent_id: (None, obs_space[agent_id], act_space[agent_id], {}) 
-                        for agent_id in obs_space 
-                },
-                "policy_mapping_fn": (lambda agent_id: agent_id)
-            },
+            # "multiagent": {
+            #     "policies": {
+            #         agent_id: (None, obs_space[agent_id], act_space[agent_id], {}) 
+            #             for agent_id in obs_space 
+            #     },
+            #     "policy_mapping_fn": (lambda agent_id: agent_id)
+            # },
             "log_level": args["log_level"].upper(),
             **framework_config,
             **hyperparam_config,
