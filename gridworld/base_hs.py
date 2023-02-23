@@ -4,10 +4,11 @@ import gym
 import numpy as np
 
 from gridworld import MultiComponentEnv
-from gridworld.agents.pv import PVEnv
 from gridworld.agents.energy_storage import EnergyStorageEnv
+from gridworld.agents.pv import PVEnv
 from gridworld.agents.vehicles import EVChargingEnv
 from gridworld.utils import to_scaled
+
 
 class HSMultiComponentEnv(MultiComponentEnv):
     """
@@ -21,7 +22,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
             self,
             #common_config: dict = {},
             #env_config: dict = {},
-            name : str = None,
+            name: str = None,
             components: dict = {},
             max_episode_steps: int = None,
             # rescale_spaces: bool = True,
@@ -29,12 +30,16 @@ class HSMultiComponentEnv(MultiComponentEnv):
     ):
 
         #super().__init__(name=common_config.name, components=env_config.components, **kwargs)
+
+        print('===================================')
+        print('kwargs: \n ', kwargs)
         super().__init__(name=name, components=components, **kwargs)
 
-        # get grid costs and find the maximum grid cost 
+        # get grid costs and find the maximum grid cost
         self._grid_cost_data = kwargs['grid_cost']
 
-        self.observation_space["grid_cost"] = gym.spaces.Box(shape=(1,), low=0.0, high=max(self._grid_cost_data), dtype=np.float64)
+        self.observation_space["grid_cost"] = gym.spaces.Box(
+            shape=(1,), low=0.0, high=max(self._grid_cost_data), dtype=np.float64)
         self._obs_labels += ["grid_cost"]
 
         self.max_episode_steps = max_episode_steps if max_episode_steps is not None else np.inf
