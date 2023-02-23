@@ -72,7 +72,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
 
     def reset(self, **kwargs) -> Tuple[dict, dict]:
         
-        print('kwargs---------------------->',kwargs)
+
 
         # This internal state object will be used to pass around intermediate
         # state of the system during the course of a step. The lower level components
@@ -85,7 +85,6 @@ class HSMultiComponentEnv(MultiComponentEnv):
 
         # reset the state of all subcomponents and collect the initialization state from each.
         for e in self.envs:
-            print(e,kwargs)
             _, kwargs = e.reset(**kwargs)
             
 
@@ -110,7 +109,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
             obs[env.name], meta[env.name] = env.get_obs(**env_kwargs)
 
             
-        print(meta[env.name])
+
         grid_cost = np.array([meta[env.name]['grid_cost']])
         
 
@@ -119,7 +118,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         else:
             obs["grid_cost"] = grid_cost
 
-        print(obs,meta)
+
 
         return obs, meta
 
@@ -157,13 +156,13 @@ class HSMultiComponentEnv(MultiComponentEnv):
             # expect that the subcomponent will update its subcomp_meta['meta_state'] with the
             # latest subcomponent meta_state after this step. Update this to the top level meta
             # for the next iteration so next component in the iteration gets state updates.
-            print('subcomp_meta',subcomp_meta)
-            meta[subcomp.name] = subcomp_meta.copy()[subcomp.name]
+            #print('subcomp_meta',subcomp_meta)
+            #meta[subcomp.name] = subcomp_meta.copy()[subcomp.name]
             #meta['meta_state'].update(subcomp_meta['meta_state'])
         
             for k,v in self.meta_state.items():
-                if k in meta[subcomp.name]:
-                    self.meta_state[k]=meta[subcomp.name][k]
+                if k in subcomp_meta:
+                    self.meta_state[k]=subcomp_meta[k]
 
         
         logger.info(f"META: {meta}")

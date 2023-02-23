@@ -9,7 +9,8 @@ class HSPVEnv(PVEnv):
         obs, meta =super().get_obs(**kwargs)
         meta.update(kwargs)
         meta['pv_power']=meta['real_power']
-        print(meta)
+
+        
         return obs,meta
     
     def reset(self, **kwargs):

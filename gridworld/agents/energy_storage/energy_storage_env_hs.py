@@ -51,7 +51,7 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
         
         self.initial_storage_cost=initial_storage_cost
 
-        self._obs_labels =self._obs_labels + ["cost"]
+        self._obs_labels =["stage_of_charge","cost"]
 
         self._observation_space = gym.spaces.Box(
             shape=(2,),
@@ -70,15 +70,13 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
         
         super().reset(**kwargs)
         
-        print('current cost', self.current_cost)
-        
+       
         return self.get_obs(**kwargs)
 
     def get_obs(self, **kwargs):
 
-        obs, meta = super().get_obs(**kwargs)
 
-        raw_obs = np.array([meta['state_of_charge'][0],self.current_cost])
+        raw_obs = np.array([self.current_storage,self.current_cost])
 
 
         if self.rescale_spaces:
@@ -86,8 +84,10 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
         else:
             obs = raw_obs
 
-        meta ={'state_of_charge' : meta['state_of_charge'][0], 'es_cost' : self.current_cost, 'es_power' : meta['state_of_charge'][0] }
+        meta ={'state_of_charge' : self.current_storage, 'es_cost' : self.current_cost, 'es_power' : self.current_storage }
         kwargs.update(meta)
+
+        print('es obsev-------------------->',obs, self.observation_space)
 
         return obs, kwargs
     
