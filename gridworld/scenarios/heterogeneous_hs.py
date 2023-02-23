@@ -8,8 +8,9 @@ from gridworld import MultiComponentEnv
 from gridworld import MultiAgentEnv
 
 from gridworld.agents.pv import PVEnv
-from gridworld.agents.energy_storage import EnergyStorageEnv
-from gridworld.agents.vehicles import EVChargingEnv
+from gridworld.agents.energy_storage import HSEnergyStorageEnv
+from gridworld.agents.vehicles import HSEVChargingEnv
+from gridworld.agents.pv import HSPVEnv
 
 import os
 
@@ -44,7 +45,7 @@ def make_env_config( rescale_spaces=True):
     grid_cost = load_grid_cost(start_time, end_time)
     pv = {
         "name": "pv",
-        "cls": PVEnv,
+        "cls": HSPVEnv,
         "config": {
             "profile_csv": "pv_profile_hs.csv",
             "scaling_factor": 40.,
@@ -54,7 +55,7 @@ def make_env_config( rescale_spaces=True):
 
     battery = {
         "name": "storage",
-        "cls": EnergyStorageEnv,
+        "cls": HSEnergyStorageEnv,
         "config": {
             "max_power"                 : 10.0,
             "storage_range"             : (1., 28.),
@@ -71,7 +72,7 @@ def make_env_config( rescale_spaces=True):
 
     ev = {
             "name": "ev-charging",
-            "cls": EVChargingEnv,
+            "cls": HSEVChargingEnv,
             "config": {
                 "num_vehicles"          : 1,
                 "minutes_per_step"      : 5,

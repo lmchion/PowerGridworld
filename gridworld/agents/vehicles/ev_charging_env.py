@@ -160,7 +160,7 @@ class EVChargingEnv(ComponentEnv):
         self._real_power = 0.
         
         # Step the simulator one time without a control action.
-        self.step()
+        self.step(**kwargs)
 
         # Get the observation needed to solve the first control step.
         obs, _ = self.get_obs()
@@ -255,8 +255,8 @@ class EVChargingEnv(ComponentEnv):
         self._real_power = self.vehicle_multiplier * real_power_consumed
        
         # Get the return values
-        obs, meta = self.get_obs()
-        rew, rew_meta = self.step_reward()
+        obs, meta = self.get_obs(**kwargs)
+        rew, rew_meta = self.step_reward(**kwargs)
         done = self.is_terminal()
 
         meta.update(rew_meta)

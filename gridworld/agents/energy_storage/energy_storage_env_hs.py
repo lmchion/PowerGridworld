@@ -45,29 +45,32 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
                           discharge_efficiency = discharge_efficiency,
                           max_power = max_power,
                           max_episode_steps= max_episode_steps,
-                          control_timedelta = max_episode_steps,
+                          control_timedelta = control_timedelta,
                           rescale_spaces = rescale_spaces,
                           **kwargs)
         
         self.initial_storage_cost=initial_storage_cost
 
-        self._obs_labels =super()._obs_labels + ["cost"]
+        self._obs_labels =self._obs_labels + ["cost"]
 
         self._observation_space = gym.spaces.Box(
             shape=(2,),
-            low=np.array([super().storage_range[0],0.00]),
-            high=np.array([super().storage_range[1],max_storage_cost]),
+            low=np.array([self.storage_range[0],0.00]),
+            high=np.array([self.storage_range[1],max_storage_cost]),
             dtype=np.float64
         )
+
+        self.current_cost = self.initial_storage_cost
 
         self.observation_space = maybe_rescale_box_space(
             self._observation_space, rescale=self.rescale_spaces)
 
 
     def reset(self, **kwargs):
-    
-
-        self.current_cost = self.initial_storage_cost
+        
+        super().reset(**kwargs)
+        
+        print('current cost', self.current_cost)
         
         return self.get_obs(**kwargs)
 
@@ -75,7 +78,7 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
 
         obs, meta = super().get_obs(**kwargs)
 
-        raw_obs = np.array([meta['state_of_charge'],self.current_cost])
+        raw_obs = np.array([meta['state_of_charge'][0],self.current_cost])
 
 
         if self.rescale_spaces:
@@ -83,10 +86,10 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
         else:
             obs = raw_obs
 
-        meta ={'state_of_charge' : meta['state_of_charge'] }
-        meta.update(kwargs)
+        meta ={'state_of_charge' : meta['state_of_charge'][0], 'es_cost' : self.current_cost, 'es_power' : meta['state_of_charge'][0] }
+        kwargs.update(meta)
 
-        return obs, meta
+        return obs, kwargs
     
     def step_reward(self,**kwargs):
 
@@ -114,11 +117,13 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
         power = action[0] * self.max_power
         power = self.validate_power(power)
 
-        solar_capacity =kwargs['power'][kwargs['labels'].index('pv')]
-        solar_cost=kwargs['cost'][kwargs['labels'].index('pv')]
-        grid_cost=kwargs['cost'][kwargs['labels'].index('grid')]                                    
+        # solar_capacity =kwargs['power'][kwargs['labels'].index('pv')]
+        # solar_cost=kwargs['cost'][kwargs['labels'].index('pv')]
+        # grid_cost=kwargs['cost'][kwargs['labels'].index('grid')]                                    
             
-        
+        solar_capacity = kwargs['pv_power']
+        solar_cost = kwargs['pv_cost']
+        grid_cost = kwargs['grid_cost']
         
         if power < 0.0:  # power negative is charging
             delta_storage = self.charge_efficiency * power * self.control_interval_in_hr
@@ -139,17 +144,21 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
             # In case of small numerical error:
             self.current_storage = min(self.current_storage, self.storage_range[1])
 
-            kwargs['power'][kwargs['labels'].index('pv')]=solar_capacity-solar_power
-            kwargs['power'][kwargs['labels'].index('es')]=0.0
+            # kwargs['power'][kwargs['labels'].index('pv')]=solar_capacity-solar_power
+            # kwargs['power'][kwargs['labels'].index('es')]=0.0
+
+            kwargs['pv_power']=min(0.0, solar_capacity-solar_power)
+            kwargs['es_power']=0.0
 
 
         elif power > 0.0:  # power positive is discharging
             self.current_storage -= power * self.control_interval_in_hr / self.discharge_efficiency
             self.current_storage = max(self.current_storage, self.storage_range[0])
-            kwargs['power'][kwargs['labels'].index('es')]=power 
+            #kwargs['power'][kwargs['labels'].index('es')]=power 
+            kwargs['es_power']=power
 
-        kwargs['cost'][kwargs['labels'].index('es')]=self.current_cost
-
+        #kwargs['cost'][kwargs['labels'].index('es')]=self.current_cost
+        kwargs['es_cost'] = self.current_cost
         #  Convert to the positive for load and  negative for generation convention.
         self._real_power = -power
 

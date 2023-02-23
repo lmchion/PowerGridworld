@@ -1,1 +1,2 @@
 from .energy_storage_env import EnergyStorageEnv
+from .energy_storage_env_hs import HSEnergyStorageEnv

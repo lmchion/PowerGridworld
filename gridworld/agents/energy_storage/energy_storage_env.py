@@ -171,6 +171,8 @@ class EnergyStorageEnv(ComponentEnv):
         """
 
         raw_obs = np.array([self.current_storage])
+
+        print('raw_obs---->', raw_obs)
         if self.rescale_spaces:
             obs = to_scaled(raw_obs, self._observation_space.low, self._observation_space.high)
         else:

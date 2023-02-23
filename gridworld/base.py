@@ -89,6 +89,7 @@ class MultiComponentEnv(ComponentEnv):
         
         self.envs = []
         for c in components:
+            print('base',c)
             env = c["cls"](name=c["name"], **c["config"])
             self.envs.append(deepcopy(env))
 
