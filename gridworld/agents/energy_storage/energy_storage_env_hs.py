@@ -5,13 +5,13 @@ from scipy.stats import truncnorm
 
 import gym
 
-from gridworld.agents.energy_storage import EnergyStorageEnv
+from gridworld import ComponentEnv
 from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
 
 
 from gridworld.log import logger
 
-class HSEnergyStorageEnv(EnergyStorageEnv):
+class HSEnergyStorageEnv(ComponentEnv):
     """Simple model of energy storage device that has (separate) linear models 
     for charging and discharging.  Gym specs:
     
@@ -37,19 +37,24 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
         **kwargs
     ):
 
-        super().__init__( name=name,
-                          storage_range=storage_range,
-                          initial_storage_mean = initial_storage_mean,
-                          initial_storage_std = initial_storage_std,
-                          charge_efficiency = charge_efficiency,
-                          discharge_efficiency = discharge_efficiency,
-                          max_power = max_power,
-                          max_episode_steps= max_episode_steps,
-                          control_timedelta = control_timedelta,
-                          rescale_spaces = rescale_spaces,
-                          **kwargs)
+        super().__init__(name=name)
         
         self.initial_storage_cost=initial_storage_cost
+        self.current_cost = self.initial_storage_cost
+
+        self.storage_range = storage_range
+        self.initial_storage_mean = initial_storage_mean
+        self.initial_storage_std = initial_storage_std
+        self.charge_efficiency = charge_efficiency
+        self.discharge_efficiency = discharge_efficiency
+        self.max_power = max_power
+        self.current_storage = None
+        self.rescale_spaces = rescale_spaces
+
+        self.simulation_step = 0
+        self.max_episode_steps = max_episode_steps
+
+        self.control_interval_in_hr = control_timedelta.seconds / 3600.0
 
         self._obs_labels =["stage_of_charge","cost"]
 
@@ -59,19 +64,75 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
             high=np.array([self.storage_range[1],max_storage_cost]),
             dtype=np.float64
         )
-
-        self.current_cost = self.initial_storage_cost
-
         self.observation_space = maybe_rescale_box_space(
             self._observation_space, rescale=self.rescale_spaces)
 
+        self._action_space = gym.spaces.Box(
+            shape=(1,),
+            low=-1.0,
+            high=1.0,
+            dtype=np.float64
+        )
+        self.action_space = maybe_rescale_box_space(
+            self._action_space, rescale=self.rescale_spaces)
 
     def reset(self, **kwargs):
+
+        #super().reset(**kwargs)
         
-        super().reset(**kwargs)
+        self.simulation_step = 0
+
+        init_storage = kwargs['init_storage'] if 'init_storage' in kwargs.keys() else None
+
+        if init_storage is None:
+            # Initial battery storage is sampled from a truncated normal distribution.
+            self.current_storage =\
+                float(truncnorm(-1, 1).rvs() *\
+                self.initial_storage_std + self.initial_storage_mean)
+        else:
+            try:
+                init_storage = float(init_storage)
+                init_storage = np.clip(
+                    init_storage, self.storage_range[0], self.storage_range[1])
+            except (TypeError, ValueError) as e:
+                print(e)
+                print("init_storage value needs to be a float, use default value instead")
+                init_storage = self.initial_storage_mean
+
+            self.current_storage = init_storage
         
        
         return self.get_obs(**kwargs)
+    
+    def validate_power(self, power):
+        """ Sanity check if the battery can provide such power given its current 
+            SOC, e.g., cannot discharge when SOC is at minimum.
+
+        Args:
+          power: A float, the controlled power to the storage. It discharges if 
+            the value is positive, else it is negative.
+
+        Return:
+          power: A float, the feasible power of the energy storage.
+        """
+
+        if power > 0:
+            # ensure the discharging power is within the range.
+            if self.current_storage - \
+                    power * self.control_interval_in_hr / self.discharge_efficiency <\
+                    self.storage_range[0]:
+                power = max(self.current_storage - self.storage_range[0], 0.0) /\
+                    self.control_interval_in_hr
+
+        elif power < 0:
+            # ensure charging does not exceed the limit
+            if self.current_storage - \
+                    self.charge_efficiency * power * self.control_interval_in_hr >\
+                    self.storage_range[1]:
+                power = - max(self.storage_range[1] - self.current_storage, 0.0) /\
+                    self.control_interval_in_hr
+
+        return power
 
     def get_obs(self, **kwargs):
 
@@ -124,15 +185,22 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
         solar_capacity = kwargs['pv_power']
         solar_cost = kwargs['pv_cost']
         grid_cost = kwargs['grid_cost']
+        grid_capacity=kwargs['grid_power']
         
-        if power < 0.0:  # power negative is charging
+        if power==0.0:
+            self.delta_cost=0.0
+
+        elif power < 0.0:  # power negative is charging
             delta_storage = self.charge_efficiency * power * self.control_interval_in_hr
 
             # first, take solar energy - the cheapest
             solar_power=min(-power,solar_capacity)
             
             # the rest, use the grid
-            grid_power=min( 0.0, -power - solar_power  )
+            grid_power=min( grid_capacity, -power - solar_power  )
+
+            print('solar capacity and power',solar_capacity,power)
+            print('solar and grid power',solar_power,grid_power)
             
             # calculate the weighted average cost of charging for the time interval
             self.delta_cost = (solar_cost*solar_power + grid_cost*grid_power)  / (solar_power+ grid_power)
@@ -168,4 +236,9 @@ class HSEnergyStorageEnv(EnergyStorageEnv):
         self.simulation_step += 1
 
         return obs, rew, self.is_terminal(), obs_meta
+    
+
+    def is_terminal(self):
+        return self.simulation_step >= self.max_episode_steps
+
     

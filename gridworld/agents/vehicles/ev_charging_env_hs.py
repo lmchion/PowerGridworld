@@ -90,10 +90,11 @@ class HSEVChargingEnv(EVChargingEnv):
             battery_cost = kwargs['es_cost']
 
             grid_cost=kwargs['grid_cost']
+            grid_capacity=kwargs['grid_power']
 
             solar_power=min(power,solar_capacity)
             battery_power = min( battery_capacity, power - solar_power ) 
-            grid_power=min( 0.0, power - battery_power )
+            grid_power=min( grid_capacity, power - battery_power )
 
             self.current_cost = (solar_cost*solar_power + grid_cost*grid_power + battery_cost*battery_power ) / (solar_power+ grid_power+battery_power)
 
