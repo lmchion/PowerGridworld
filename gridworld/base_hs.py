@@ -10,7 +10,7 @@ from gridworld.agents.pv import PVEnv
 from gridworld.agents.vehicles import EVChargingEnv
 from gridworld.log import logger
 from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
-
+from collections import OrderedDict
 
 class HSMultiComponentEnv(MultiComponentEnv):
     """
@@ -39,8 +39,6 @@ class HSMultiComponentEnv(MultiComponentEnv):
 
         #super().__init__(name=common_config.name, components=env_config.components, **kwargs)
 
-        print('===================================')
-        print('kwargs: \n ', kwargs)
         super().__init__(name=name, components=components, **kwargs)
 
         self.rescale_spaces = rescale_spaces
@@ -48,27 +46,30 @@ class HSMultiComponentEnv(MultiComponentEnv):
         # get grid costs and find the maximum grid cost
         self._grid_cost_data = kwargs['grid_cost']
 
-        self.observation_space["grid_cost"] = gym.spaces.Box(
-            shape=(1,), low=0.0, high=max(self._grid_cost_data), dtype=np.float64)
-        self._obs_labels += ["grid_cost"]
+        # self.observation_space["grid_cost"] = gym.spaces.Box(
+        #     shape=(1,), low=0.0, high=max(self._grid_cost_data), dtype=np.float64)
+        # self._obs_labels += ["grid_cost"]
 
-        self.observation_space["grid_cost"] = maybe_rescale_box_space(
-            self.observation_space["grid_cost"], rescale=self.rescale_spaces)
+        # self.observation_space["grid_cost"] = maybe_rescale_box_space(
+        #     self.observation_space["grid_cost"], rescale=self.rescale_spaces)
 
         self.max_episode_steps = max_episode_steps if max_episode_steps is not None else np.inf
-        self.time_index = 0
-        self.meta_state = {'grid_cost': self._grid_cost_data[self.time_index],
+        
+        self.meta_state = {'grid_cost': None,
                            'es_cost': None,
                            'grid_power': self.max_grid_power,
                            'pv_power': None,
                            'es_power': None,
                            'pv_cost': 0.0
                            }
+        #self._obs_labels = self._obs_labels +['grid_cost']
 
         # Action spaces from the component envs are combined into the composite space in super.__init__
 
     def reset(self, **kwargs) -> Tuple[dict, dict]:
+        self.time_index = 0
 
+        self.meta_state['grid_cost']=self._grid_cost_data[self.time_index]
         # This internal state object will be used to pass around intermediate
         # state of the system during the course of a step. The lower level components
         # are expected to use the information that is present in this state as inputs to
@@ -94,7 +95,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
 
         # Initialize outputs.
         obs = {}
-        meta = {}
+        meta = OrderedDict()
 
         # Loop over envs and create the observation dict (of dicts).
         for env in self.envs:
@@ -103,13 +104,13 @@ class HSMultiComponentEnv(MultiComponentEnv):
             env_kwargs.update(kwargs)
             obs[env.name], meta[env.name] = env.get_obs(**env_kwargs)
 
-        grid_cost = np.array([meta[env.name]['grid_cost']])
+        # grid_cost = np.array([meta[env.name]['grid_cost']])
 
-        if self.rescale_spaces:
-            obs["grid_cost"] = to_scaled(
-                grid_cost, self.observation_space["grid_cost"].low, self.observation_space["grid_cost"].high)
-        else:
-            obs["grid_cost"] = grid_cost
+        # if self.rescale_spaces:
+        #     obs["grid_cost"] = to_scaled(
+        #         grid_cost, self.observation_space["grid_cost"].low, self.observation_space["grid_cost"].high)
+        # else:
+        #     obs["grid_cost"] = grid_cost
 
         return obs, meta
 
@@ -126,7 +127,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         meta = {}
 
         self.meta_state['grid_cost'] = self._grid_cost_data[self.time_index]
-
+        
         # Loop over envs and collect real power injection/consumption.
         for subcomp in self.envs:
             subcomp_kwargs = {k: v for k,
@@ -155,11 +156,11 @@ class HSMultiComponentEnv(MultiComponentEnv):
                 if k in subcomp_meta:
                     self.meta_state[k] = subcomp_meta[k]
 
-        if self.rescale_spaces:
-            obs["grid_cost"] = to_scaled(
-                self.meta_state['grid_cost'], self.observation_space["grid_cost"].low, self.observation_space["grid_cost"].high)
-        else:
-            obs["grid_cost"] = self.meta_state['grid_cost']
+        # if self.rescale_spaces:
+        #     obs["grid_cost"] = to_scaled(
+        #         self.meta_state['grid_cost'], self.observation_space["grid_cost"].low, self.observation_space["grid_cost"].high)
+        # else:
+        #     obs["grid_cost"] = self.meta_state['grid_cost']
 
         logger.info(f"META: {meta}")
         # Set real power attribute.  TODO:  Reactive power.

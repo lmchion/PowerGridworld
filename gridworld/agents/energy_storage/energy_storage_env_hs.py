@@ -148,7 +148,7 @@ class HSEnergyStorageEnv(ComponentEnv):
         meta ={'state_of_charge' : self.current_storage, 'es_cost' : self.current_cost, 'es_power' : self.current_storage }
         kwargs.update(meta)
 
-        print('es obsev-------------------->',obs, self.observation_space)
+
 
         return obs, kwargs
     
@@ -199,9 +199,7 @@ class HSEnergyStorageEnv(ComponentEnv):
             # the rest, use the grid
             grid_power=min( grid_capacity, -power - solar_power  )
 
-            print('solar capacity and power',solar_capacity,power)
-            print('solar and grid power',solar_power,grid_power)
-            
+           
             # calculate the weighted average cost of charging for the time interval
             self.delta_cost = (solar_cost*solar_power + grid_cost*grid_power)  / (solar_power+ grid_power)
 

@@ -79,7 +79,8 @@ def make_env_config( rescale_spaces=True):
                 "max_charge_rate_kw"    : 11.,
                 "peak_threshold"        : 200.,
                 "vehicle_multiplier"    : 40.,
-                "rescale_spaces"        : rescale_spaces
+                "rescale_spaces"        : rescale_spaces,
+                "max_charge_cost"       :  max(grid_cost)
             }
         }
 
