@@ -162,7 +162,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         # else:
         #     obs["grid_cost"] = self.meta_state['grid_cost']
 
-        logger.info(f"META: {meta}")
+        #logger.info(f"META: {meta}")
         # Set real power attribute.  TODO:  Reactive power.
         self._real_power = real_power
 
