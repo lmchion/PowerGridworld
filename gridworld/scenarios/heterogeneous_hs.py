@@ -1,18 +1,12 @@
-from os import system
-import pandas as pd
-
-from os import system
-import pandas as pd
-
-from gridworld import MultiComponentEnv
-from gridworld import MultiAgentEnv
-
-from gridworld.agents.pv import PVEnv
-from gridworld.agents.energy_storage import HSEnergyStorageEnv
-from gridworld.agents.vehicles import HSEVChargingEnv
-from gridworld.agents.pv import HSPVEnv
-
 import os
+from os import system
+
+import pandas as pd
+
+from gridworld import MultiAgentEnv, MultiComponentEnv
+from gridworld.agents.energy_storage import HSEnergyStorageEnv
+from gridworld.agents.pv import HSPVEnv, PVEnv
+from gridworld.agents.vehicles import HSEVChargingEnv
 
 
 def load_grid_cost(start_time: str = None, end_time: str = None) -> list:
@@ -78,7 +72,7 @@ def make_env_config( rescale_spaces=True):
                 "minutes_per_step"      : 5,
                 "max_charge_rate_kw"    : 11.,
                 "peak_threshold"        : 200.,
-                "vehicle_multiplier"    : 40.,
+                #"vehicle_multiplier"    : 40.,
                 "rescale_spaces"        : rescale_spaces,
                 "max_charge_cost"       :  max(grid_cost)
             }

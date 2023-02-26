@@ -1,14 +1,13 @@
-from collections import OrderedDict
 import os
+from collections import OrderedDict
 from typing import Tuple
 
+import gym
 import numpy as np
 import pandas as pd
 
-import gym
-
-from gridworld.log import logger
 from gridworld import ComponentEnv
+from gridworld.log import logger
 from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -74,7 +73,7 @@ class HSEVChargingEnv(ComponentEnv):
         self._df["end_time_park_min"] = self._round(self._df["end_time_park_min"])
 
 
-               # Bounds on the observation space variables.
+        # Bounds on the observation space variables.
         obs_bounds = OrderedDict({
             "time": (0, self.simulation_times[-1]),
             "num_active_vehicles": (
@@ -163,9 +162,13 @@ class HSEVChargingEnv(ComponentEnv):
     def step_reward(self, **kwargs) -> Tuple[float, dict]:
         """Return a non-zero reward here if you want to use RL."""
 
-        reward = self.current_cost * self._real_power + kwargs['grid_cost'] * self.state["real_power_unserved"]   
+        step_cost = self.current_cost * self._real_power + kwargs['grid_cost'] * self.state["real_power_unserved"]   
+        reward_meta = {}
 
-        return -reward, {}
+        reward = -step_cost
+        
+        reward_meta["ev_step_cost"] = step_cost
+        return reward, reward_meta
    
     def step(self, action: np.ndarray = None, **kwargs) -> Tuple[np.ndarray, float, bool, dict]:
 

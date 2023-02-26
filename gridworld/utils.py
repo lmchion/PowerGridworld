@@ -1,8 +1,7 @@
 import logging
 
-import numpy as np
-
 import gym
+import numpy as np
 
 from gridworld.log import logger
 
@@ -15,8 +14,8 @@ def to_scaled(
     """Scale the input arr in [low, high] to [-1, 1]"""
 
     # Warn the user if the arguments are out of bounds, this shouldn't happend.
-    if not np.all(x >= low) and np.all(x <= high):
-        logger.warning(f"argument out of bounds, {x}, {low}, {high}")
+    #if not np.all(x >= low) and np.all(x <= high):
+        #logger.warning(f"argument out of bounds, {x}, {low}, {high}")
     
     # Clip the values (in case the above warning is ignored).
     x = np.clip(x, low, high)

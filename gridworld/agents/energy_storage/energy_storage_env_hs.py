@@ -1,15 +1,12 @@
+import gym
 import numpy as np
 import pandas as pd
-
 from scipy.stats import truncnorm
 
-import gym
-
 from gridworld import ComponentEnv
+from gridworld.log import logger
 from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
 
-
-from gridworld.log import logger
 
 class HSEnergyStorageEnv(ComponentEnv):
     """Simple model of energy storage device that has (separate) linear models 
@@ -154,17 +151,21 @@ class HSEnergyStorageEnv(ComponentEnv):
     
     def step_reward(self,**kwargs):
 
-        
+        es_cost = 0.0
+        reward_meta = {}
         if self._real_power < 0 :  # discharging
-            es_reward = 0.0  # when it is negative, the battery becomes a producer SO no reward
-            reward_meta = {}
+            es_cost = 0.0  # when it is negative, the battery becomes a producer SO no reward
         else:  # charging
-            # es_reward = cost of charging (solar + grid) $/Kwh * efficiency % * power (Kw) * time (h)
-            es_reward = self.delta_cost* self.charge_efficiency * self._real_power * self.control_interval_in_hr
-            reward_meta = {}
+            # es_cost = cost of charging (solar + grid) $/Kwh * efficiency % * power (Kw) * time (h)
+            
+            es_cost = self.delta_cost* self.charge_efficiency * self._real_power * self.control_interval_in_hr
 
         #the reward has to be negative so higher reward for less cost
-        return -es_reward, reward_meta
+
+        reward = -es_cost
+        
+        reward_meta["es_step_cost"] = es_cost
+        return reward, reward_meta
 
      
      
@@ -229,8 +230,9 @@ class HSEnergyStorageEnv(ComponentEnv):
         self._real_power = -power
 
         obs, obs_meta = self.get_obs(**kwargs)
-        rew, _ = self.step_reward()
+        rew, rew_meta = self.step_reward(**kwargs)
 
+        obs_meta.update(rew_meta)
         self.simulation_step += 1
 
         return obs, rew, self.is_terminal(), obs_meta

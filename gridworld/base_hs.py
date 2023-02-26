@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from typing import Dict, List, Tuple
 
 import gym
@@ -10,7 +11,7 @@ from gridworld.agents.pv import PVEnv
 from gridworld.agents.vehicles import EVChargingEnv
 from gridworld.log import logger
 from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
-from collections import OrderedDict
+
 
 class HSMultiComponentEnv(MultiComponentEnv):
     """
@@ -60,8 +61,11 @@ class HSMultiComponentEnv(MultiComponentEnv):
                            'grid_power': self.max_grid_power,
                            'pv_power': None,
                            'es_power': None,
-                           'pv_cost': 0.0
+                           'pv_cost': 0.0,
+                           'ev_step_cost': -1.0,
+                           'es_step_cost': -1.0
                            }
+        
         #self._obs_labels = self._obs_labels +['grid_cost']
 
         # Action spaces from the component envs are combined into the composite space in super.__init__
@@ -152,9 +156,10 @@ class HSMultiComponentEnv(MultiComponentEnv):
             #meta[subcomp.name] = subcomp_meta.copy()[subcomp.name]
             # meta['meta_state'].update(subcomp_meta['meta_state'])
 
-            for k, v in self.meta_state.items():
-                if k in subcomp_meta:
-                    self.meta_state[k] = subcomp_meta[k]
+            #for k, v in self.meta_state.items():
+            #    if k in subcomp_meta:
+            #        self.meta_state[k] = subcomp_meta[k]
+            self.meta_state.update(subcomp_meta)
 
         # if self.rescale_spaces:
         #     obs["grid_cost"] = to_scaled(
