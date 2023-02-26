@@ -162,7 +162,18 @@ class HSEVChargingEnv(ComponentEnv):
     def step_reward(self, **kwargs) -> Tuple[float, dict]:
         """Return a non-zero reward here if you want to use RL."""
 
-        step_cost = self.current_cost * self._real_power + kwargs['grid_cost'] * self.state["real_power_unserved"]   
+        step_cost = self.current_cost * self._real_power + kwargs['grid_cost'] * self.state["real_power_unserved"] 
+
+        factors = [self.current_cost, self._real_power, kwargs['grid_cost'], self.state["real_power_unserved"]]
+        
+        if any([x<0 for x in factors]):
+            print("\n\n[[[[[[[[[[[[[EV Step Rewards]]]]]]]]]]]]]")  
+            print(self.current_cost, self._real_power)
+            print("-----")
+            print(kwargs['grid_cost'], self.state["real_power_unserved"] )
+            print("-----")
+            print("[[[[[[[[[[[[[]]]]]]]]]]]]]\n\n") 
+
         reward_meta = {}
 
         reward = -step_cost
