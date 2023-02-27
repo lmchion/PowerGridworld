@@ -187,6 +187,8 @@ class HSEnergyStorageEnv(ComponentEnv):
         solar_cost = kwargs['pv_cost']
         grid_cost = kwargs['grid_cost']
         grid_capacity=kwargs['grid_power']
+
+        #print("power needed for the EV", power, kwargs)
         
         if power==0.0:
             self.delta_cost=0.0
@@ -214,7 +216,8 @@ class HSEnergyStorageEnv(ComponentEnv):
             # kwargs['power'][kwargs['labels'].index('pv')]=solar_capacity-solar_power
             # kwargs['power'][kwargs['labels'].index('es')]=0.0
 
-            kwargs['pv_power']=min(0.0, solar_capacity-solar_power)
+            kwargs['pv_power']=max(0.0, solar_capacity-solar_power)
+            kwargs['grid_power']=max(0.0, grid_capacity-grid_power)
             kwargs['es_power']=0.0
 
 

@@ -7,6 +7,7 @@ from gridworld import MultiAgentEnv, MultiComponentEnv
 from gridworld.agents.energy_storage import HSEnergyStorageEnv
 from gridworld.agents.pv import HSPVEnv, PVEnv
 from gridworld.agents.vehicles import HSEVChargingEnv
+from gridworld.agents.devices import HSDevicesEnv
 
 
 def load_grid_cost(start_time: str = None, end_time: str = None) -> list:
@@ -77,13 +78,27 @@ def make_env_config( rescale_spaces=True):
                 "max_charge_cost"       :  max(grid_cost)
             }
         }
+    
+
+    devs = {
+            "name": "other-devices",
+            "cls": HSDevicesEnv,
+            "config": {
+                'profile_csv' : 'devices_profile_hs.csv' ,
+                'profile_path' : None,
+                'scaling_factor' :  1.,
+                'rescale_spaces':  True,
+                'max_episode_steps':  None,
+
+            }
+        }
 
 
 
 
 
     # this defines the arbitrary order of devices and the action that they take in the composite environment.
-    house_components = [pv, battery, ev ]
+    house_components = [pv, battery, ev, devs ]
 
 
 

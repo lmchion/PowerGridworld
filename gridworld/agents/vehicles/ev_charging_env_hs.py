@@ -281,8 +281,9 @@ class HSEVChargingEnv(ComponentEnv):
 
             self.current_cost = (solar_cost*solar_power + grid_cost*grid_power + battery_cost*battery_power ) / (solar_power+ grid_power+battery_power)
 
-            kwargs['pv_power']=min(0.0, solar_capacity-solar_power)
-            kwargs['es_power']=min(0.0, battery_capacity-battery_power)
+            kwargs['pv_power']=max(0.0, solar_capacity-solar_power)
+            kwargs['es_power']=max(0.0, battery_capacity-battery_power)
+            kwargs['grid_power']=max(0.0, grid_capacity-grid_power)
 
         self._update("current_cost", self.current_cost)
 

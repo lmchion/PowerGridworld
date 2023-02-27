@@ -74,6 +74,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         self.time_index = 0
 
         self.meta_state['grid_cost']=self._grid_cost_data[self.time_index]
+        self.meta_state['grid_power'] = self.max_grid_power
         # This internal state object will be used to pass around intermediate
         # state of the system during the course of a step. The lower level components
         # are expected to use the information that is present in this state as inputs to
@@ -131,6 +132,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         meta = {}
 
         self.meta_state['grid_cost'] = self._grid_cost_data[self.time_index]
+        self.meta_state['grid_power'] = self.max_grid_power
         
         # Loop over envs and collect real power injection/consumption.
         for subcomp in self.envs:
