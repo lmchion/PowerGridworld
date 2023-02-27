@@ -174,7 +174,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         # Compute the step reward using user-implemented method.
         step_reward, _ = self.step_reward(**self.meta_state)
 
-        return obs, step_reward, any(dones), meta
+        return obs, step_reward, any(dones), self.meta_state
 
     # step reward from the base environment definition continues to apply to this env as well.
 

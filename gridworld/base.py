@@ -1,11 +1,10 @@
+import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
-import logging
-from typing import Tuple, List, Dict
-
-import numpy as np
+from typing import Dict, List, Tuple
 
 import gym
+import numpy as np
 
 from gridworld.log import logger
 
@@ -89,7 +88,7 @@ class MultiComponentEnv(ComponentEnv):
         
         self.envs = []
         for c in components:
-            print('base',c)
+            # print('base',c)
             env = c["cls"](name=c["name"], **c["config"])
             self.envs.append(deepcopy(env))
 

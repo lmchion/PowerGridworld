@@ -160,14 +160,6 @@ class HSEnergyStorageEnv(ComponentEnv):
             
             es_cost = self.delta_cost* self.charge_efficiency * self._real_power * self.control_interval_in_hr
 
-
-            factors = [self.delta_cost, self.charge_efficiency, self._real_power, self.control_interval_in_hr]
-        
-            if any([x<0 for x in factors]):
-                print("\n\n[[[[[[[[[[[[[ES Step Rewards]]]]]]]]]]]]]")  
-                print(self.delta_cost, self.charge_efficiency, self._real_power, self.control_interval_in_hr)
-                print("[[[[[[[[[[[[[]]]]]]]]]]]]]\n\n") 
-
         #the reward has to be negative so higher reward for less cost
 
         reward = -es_cost

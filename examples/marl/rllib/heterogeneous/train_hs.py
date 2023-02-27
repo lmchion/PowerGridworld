@@ -1,14 +1,68 @@
 """Script for running single-machine training.  If you want to run rllib on a 
 cluster see, e.g., https://docs.ray.io/en/latest/cluster/deploy.html."""
+import json
+import os
+import os.path as osp
+from collections import defaultdict
 
+import numpy as np
 import ray
 from ray import tune
+from ray.rllib.agents.callbacks import DefaultCallbacks
+from ray.tune import Callback
+from ray.tune.logger import LoggerCallback
 from ray.tune.registry import register_env
 
 from gridworld.log import logger
 from gridworld.scenarios.heterogeneous_hs import make_env_config
 
 
+class HSAgentTrainingCallback(DefaultCallbacks):
+    def on_episode_start(
+        self, *, worker, base_env, policies, episode, env_index, **kwargs
+    ):
+        episode.media["episode_data"] = defaultdict(list)
+        
+        # episode.user_data = {"final": {}, "running": defaultdict(list)}
+
+    def on_episode_step(
+        self, *, worker, base_env, episode, env_index, **kwargs
+    ):
+        # TODO change this in subcomponents to use the component name to remove hard-coding.
+        episode.media["episode_data"]['ev_step_cost'].append(episode.last_info_for().get('ev_step_cost', None))
+        episode.media["episode_data"]['es_step_cost'].append(episode.last_info_for().get('es_step_cost', None))
+
+    def on_episode_end(
+        self, *, worker, base_env, policies, episode, env_index, **kwargs
+    ):
+        for name, value in episode.media["episode_data"].items():
+            episode.media["episode_data"][name] = np.array(value).tolist()
+        
+class HSDataLoggerCallback(LoggerCallback):
+    def __init__(self):
+        self._trial_continue = {}
+        self._trial_local_dir = {}
+
+    def log_trial_start(self, trial):
+        trial.init_logdir()
+        self._trial_local_dir[trial] = osp.join(trial.logdir, "episode_data")
+        os.makedirs(self._trial_local_dir[trial], exist_ok=True)
+
+    def log_trial_result(self, iteration, trial, result):
+        if "episode_data" not in result["episode_media"]:
+            return
+
+        step = result['timesteps_total']
+        data_file = osp.join(
+            self._trial_local_dir[trial], f"data-{step:08d}.json"
+        )
+
+        num_episodes = result["episodes_this_iter"]
+        data = result["episode_media"]["episode_data"]
+        episode_data = data[-num_episodes:]
+
+        json.dump(episode_data, open(data_file, "w"))  
+    
 
 def env_creator(config: dict):
     """Simple wrapper that takes a config dict and returns an env instance."""
@@ -96,11 +150,13 @@ def main(**args):
         checkpoint_score_attr="episode_reward_mean",
         keep_checkpoints_num=100,
         stop=stop,
+        callbacks=[HSDataLoggerCallback()],
         config={
             "env": env_name,
             "env_config": env_config,
             "num_gpus": args["num_gpus"],
             "num_workers": num_workers,
+            "callbacks": HSAgentTrainingCallback,
             # "multiagent": {
             #     "policies": {
             #         agent_id: (None, obs_space[agent_id], act_space[agent_id], {}) 

@@ -64,7 +64,7 @@ class HSEVChargingEnv(ComponentEnv):
         self.departed_vehicles = None  # vehicle list departed in last time step
 
         # Read the source dataframe.
-        vehicle_csv = vehicle_csv if vehicle_csv else os.path.join(THIS_DIR, "vehicles.csv")
+        vehicle_csv = vehicle_csv if vehicle_csv else os.path.join(THIS_DIR, "vehicles_hs.csv")
         self._df = pd.read_csv(vehicle_csv)     # all vehicles
         self._df["energy_required_kwh"] *= self.vehicle_multiplier
 
@@ -163,16 +163,6 @@ class HSEVChargingEnv(ComponentEnv):
         """Return a non-zero reward here if you want to use RL."""
 
         step_cost = self.current_cost * self._real_power + kwargs['grid_cost'] * self.state["real_power_unserved"] 
-
-        factors = [self.current_cost, self._real_power, kwargs['grid_cost'], self.state["real_power_unserved"]]
-        
-        if any([x<0 for x in factors]):
-            print("\n\n[[[[[[[[[[[[[EV Step Rewards]]]]]]]]]]]]]")  
-            print(self.current_cost, self._real_power)
-            print("-----")
-            print(kwargs['grid_cost'], self.state["real_power_unserved"] )
-            print("-----")
-            print("[[[[[[[[[[[[[]]]]]]]]]]]]]\n\n") 
 
         reward_meta = {}
 
