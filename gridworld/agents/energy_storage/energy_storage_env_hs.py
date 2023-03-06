@@ -4,7 +4,6 @@ import pandas as pd
 from scipy.stats import truncnorm
 
 from gridworld import ComponentEnv
-from gridworld.log import logger
 from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
 
 
@@ -151,21 +150,24 @@ class HSEnergyStorageEnv(ComponentEnv):
     
     def step_reward(self,**kwargs):
 
-        es_cost = 0.0
-        reward_meta = {}
+        step_cost = 0.0
+        
         if self._real_power < 0 :  # discharging
-            es_cost = 0.0  # when it is negative, the battery becomes a producer SO no reward
+            step_cost = 0.0  # when it is negative, the battery becomes a producer SO no reward
         else:  # charging
             # es_cost = cost of charging (solar + grid) $/Kwh * efficiency % * power (Kw) * time (h)
             
-            es_cost = self.delta_cost* self.charge_efficiency * self._real_power * self.control_interval_in_hr
+            step_cost = self.delta_cost* self.charge_efficiency * self._real_power * self.control_interval_in_hr
 
         #the reward has to be negative so higher reward for less cost
 
-        reward = -es_cost
+        reward = -step_cost
         
-        reward_meta["es_step_cost"] = es_cost
-        return reward, reward_meta
+        step_meta = {}
+        step_meta['device_id'] = self.name
+        step_meta["timestamp"] = kwargs['timestamp']
+        step_meta["cost"] = step_cost
+        return reward, {"step_meta": step_meta}
 
      
      
@@ -188,8 +190,6 @@ class HSEnergyStorageEnv(ComponentEnv):
         grid_cost = kwargs['grid_cost']
         grid_capacity=kwargs['grid_power']
 
-        #print("power needed for the EV", power, kwargs)
-        
         if power==0.0:
             self.delta_cost=0.0
 

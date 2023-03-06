@@ -1,14 +1,11 @@
 import os
 
+import gym
 import numpy as np
 import pandas as pd
 
-import gym
-
-from gridworld.log import logger
 from gridworld import ComponentEnv
 from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
-
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 PROFILE_DIR = os.path.join(THIS_DIR, "data")
@@ -120,12 +117,14 @@ class HSDevicesEnv(ComponentEnv):
         """Step reward is always zero."""
         step_cost = self.current_cost * self._real_power 
 
-        reward_meta = {}
+        step_meta = {}
 
         reward = -step_cost
         
-        reward_meta["dev_step_cost"] = step_cost
-        return reward, reward_meta
+        step_meta["device_id"] = self.name
+        step_meta["timestamp"] = kwargs['timestamp']
+        step_meta["cost"] = step_cost
+        return reward, {"step_meta": step_meta}
 
 
 
@@ -149,7 +148,7 @@ class HSDevicesEnv(ComponentEnv):
 
         obs, kwargs = self.get_obs(**kwargs)
 
-        
+        obs_meta = kwargs.copy()
 
         sum_obs_meta=sum([kwargs[x] for x in self._obs_labels ])
         self._real_power = np.float64((action * sum_obs_meta).squeeze())
@@ -179,10 +178,8 @@ class HSDevicesEnv(ComponentEnv):
             kwargs['es_power']=max(0.0, battery_capacity-battery_power)
             kwargs['grid_power']=max(0.0, grid_capacity-grid_power)
 
-        
-        
-        rew, _ = self.step_reward(**kwargs)
-        
+        rew, rewmeta = self.step_reward(**kwargs)
+        obs_meta.update(rewmeta)
         self.index += 1
 
-        return obs, rew, self.is_terminal(), kwargs.copy()
+        return obs, rew, self.is_terminal(), obs_meta

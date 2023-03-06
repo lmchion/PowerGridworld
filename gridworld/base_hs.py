@@ -6,10 +6,6 @@ import numpy as np
 import pandas as pd
 
 from gridworld import MultiComponentEnv
-from gridworld.agents.energy_storage import EnergyStorageEnv
-from gridworld.agents.pv import PVEnv
-from gridworld.agents.vehicles import EVChargingEnv
-from gridworld.log import logger
 from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
 
 
@@ -47,6 +43,8 @@ class HSMultiComponentEnv(MultiComponentEnv):
         # get grid costs and find the maximum grid cost
         self._grid_cost_data = kwargs['grid_cost']
 
+        self._timestamps = kwargs['timestamps']
+
         # self.observation_space["grid_cost"] = gym.spaces.Box(
         #     shape=(1,), low=0.0, high=max(self._grid_cost_data), dtype=np.float64)
         # self._obs_labels += ["grid_cost"]
@@ -56,14 +54,14 @@ class HSMultiComponentEnv(MultiComponentEnv):
 
         self.max_episode_steps = max_episode_steps if max_episode_steps is not None else np.inf
         
-        self.meta_state = {'grid_cost': None,
+        self.meta_state = { 'timestamp': None,
+                            'grid_cost': None,
                            'es_cost': None,
                            'grid_power': self.max_grid_power,
                            'pv_power': None,
                            'es_power': None,
                            'pv_cost': 0.0,
-                           'ev_step_cost': -1.0,
-                           'es_step_cost': -1.0
+                           'step_meta': None
                            }
         
         #self._obs_labels = self._obs_labels +['grid_cost']
@@ -72,9 +70,10 @@ class HSMultiComponentEnv(MultiComponentEnv):
 
     def reset(self, **kwargs) -> Tuple[dict, dict]:
         self.time_index = 0
-
-        self.meta_state['grid_cost']=self._grid_cost_data[self.time_index]
+        self.meta_state['timestamp']= self._timestamps[self.time_index] #self._grid_cost_data['timestamp'].tolist()[self.time_index]
+        self.meta_state['grid_cost']= self._grid_cost_data[self.time_index] #self._grid_cost_data['grid_cost'].tolist()[self.time_index]
         self.meta_state['grid_power'] = self.max_grid_power
+        self.meta_state['step_meta'] = []
         # This internal state object will be used to pass around intermediate
         # state of the system during the course of a step. The lower level components
         # are expected to use the information that is present in this state as inputs to
@@ -129,11 +128,11 @@ class HSMultiComponentEnv(MultiComponentEnv):
         real_power = 0
         obs = {}
         dones = []
-        meta = {}
 
-        self.meta_state['grid_cost'] = self._grid_cost_data[self.time_index]
+        self.meta_state['timestamp']= self._timestamps[self.time_index]
+        self.meta_state['grid_cost']= self._grid_cost_data[self.time_index] 
         self.meta_state['grid_power'] = self.max_grid_power
-        
+        self.meta_state['step_meta'] = []
         # Loop over envs and collect real power injection/consumption.
         for subcomp in self.envs:
             subcomp_kwargs = {k: v for k,
@@ -157,11 +156,15 @@ class HSMultiComponentEnv(MultiComponentEnv):
             # print('subcomp_meta',subcomp_meta)
             #meta[subcomp.name] = subcomp_meta.copy()[subcomp.name]
             # meta['meta_state'].update(subcomp_meta['meta_state'])
+            if subcomp_meta:
+                step_meta = self.meta_state['step_meta']
+                
+                self.meta_state.update(subcomp_meta)
 
-            #for k, v in self.meta_state.items():
-            #    if k in subcomp_meta:
-            #        self.meta_state[k] = subcomp_meta[k]
-            self.meta_state.update(subcomp_meta)
+                if subcomp_meta['step_meta']:
+                    step_meta.extend([subcomp_meta['step_meta']])
+                    self.meta_state['step_meta'] = step_meta
+
 
         # if self.rescale_spaces:
         #     obs["grid_cost"] = to_scaled(
@@ -192,6 +195,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         for env in self.envs:
             r, m = env.step_reward(**kwargs)
             reward += r
-            meta[env.name] = m.copy()
+            if m:
+                meta[env.name] = m.copy()
 
         return reward, meta

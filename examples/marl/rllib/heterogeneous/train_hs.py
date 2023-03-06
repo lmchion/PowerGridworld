@@ -3,13 +3,13 @@ cluster see, e.g., https://docs.ray.io/en/latest/cluster/deploy.html."""
 import json
 import os
 import os.path as osp
-from collections import defaultdict
+import threading
 
 import numpy as np
+import pandas as pd
 import ray
 from ray import tune
 from ray.rllib.agents.callbacks import DefaultCallbacks
-from ray.tune import Callback
 from ray.tune.logger import LoggerCallback
 from ray.tune.registry import register_env
 
@@ -21,23 +21,23 @@ class HSAgentTrainingCallback(DefaultCallbacks):
     def on_episode_start(
         self, *, worker, base_env, policies, episode, env_index, **kwargs
     ):
-        episode.media["episode_data"] = defaultdict(list)
-        
-        # episode.user_data = {"final": {}, "running": defaultdict(list)}
+        #episode.user_data["episode_data"] = defaultdict(list)
+        episode.media["episode_data"] = []
 
     def on_episode_step(
         self, *, worker, base_env, episode, env_index, **kwargs
     ):
         # TODO change this in subcomponents to use the component name to remove hard-coding.
-        episode.media["episode_data"]['ev_step_cost'].append(episode.last_info_for().get('ev_step_cost', None))
-        episode.media["episode_data"]['es_step_cost'].append(episode.last_info_for().get('es_step_cost', None))
+        step_meta = episode.last_info_for().get('step_meta', None)
+        for step_meta_item in step_meta:
+            episode.media["episode_data"].append([step_meta_item["device_id"], step_meta_item["timestamp"], step_meta_item["cost"]])
+        #episode.media["episode_data"]['es_step_cost'].append(episode.last_info_for().get('es_step_cost', None))
 
     def on_episode_end(
         self, *, worker, base_env, policies, episode, env_index, **kwargs
     ):
-        for name, value in episode.media["episode_data"].items():
-            episode.media["episode_data"][name] = np.array(value).tolist()
-        
+        episode_data = episode.media["episode_data"]
+
 class HSDataLoggerCallback(LoggerCallback):
     def __init__(self):
         self._trial_continue = {}
@@ -49,20 +49,48 @@ class HSDataLoggerCallback(LoggerCallback):
         os.makedirs(self._trial_local_dir[trial], exist_ok=True)
 
     def log_trial_result(self, iteration, trial, result):
-        if "episode_data" not in result["episode_media"]:
-            return
+        file_lock = threading.Lock()
 
-        step = result['timesteps_total']
-        data_file = osp.join(
-            self._trial_local_dir[trial], f"data-{step:08d}.json"
-        )
+        with file_lock:
+            episode_media = result["episode_media"]
+            if "episode_data" not in episode_media:
+                return
 
-        num_episodes = result["episodes_this_iter"]
-        data = result["episode_media"]["episode_data"]
-        episode_data = data[-num_episodes:]
+            step = result['timesteps_total']
+            dump_file_name = osp.join(
+                self._trial_local_dir[trial], f"data-{step:08d}.json"
+            )
 
-        json.dump(episode_data, open(data_file, "w"))  
-    
+            num_episodes = result["episodes_this_iter"]
+            data = episode_media["episode_data"]            
+
+            episode_data = data[-num_episodes:]
+
+            #logger.info("Trial Result dumping to", dump_file_name)
+            df = pd.DataFrame(np.array([]).reshape((-1, 3)), columns = ["device", "timestamp", "cost"])
+            for tranche in episode_data:
+                if not tranche:
+                    logger.info("Episode data tranche is empty while logging. skipping.")
+                    continue
+                
+                tmp_df = pd.DataFrame(tranche, columns = ["device", "timestamp", "cost"])
+
+                df = df.append(tmp_df)
+
+            device_list = df['device'].unique()
+            final_json = []
+            for device in device_list:
+                device_data = {}
+                device_data['device_id'] = device
+                tmp_device_data = df[df["device"]==device].drop("device", axis=1)
+                device_data['columns'] = list(tmp_device_data.columns.values)
+                device_data['usage_data'] = tmp_device_data.values.tolist()
+                final_json.append(device_data)
+            
+            with open(dump_file_name, mode='w+') as thisfile:
+                json.dump(final_json, thisfile)  
+
+                
 
 def env_creator(config: dict):
     """Simple wrapper that takes a config dict and returns an env instance."""
@@ -79,7 +107,7 @@ def main(**args):
 
     # Run ray on a single node.  If running on VPN, you might need some bash 
     # magic, see e.g. train.sh.
-    ray.init(_node_ip_address=args["node_ip_address"])
+    ray.init(_node_ip_address=args["node_ip_address"], log_to_driver=True, logging_level="error")
    
     # Register the environment.
     env_name = args["env_name"]
@@ -90,7 +118,7 @@ def main(**args):
     env_config = make_env_config()
     env_config.update({"max_episode_steps": args["max_episode_steps"]})
 
-    print("ENV CONFIG", env_config)
+    logger.info("ENV CONFIG", env_config)
 
     # Create an env instance to introspect the gym spaces and episode length
     # when setting up the multiagent policy.
@@ -166,7 +194,8 @@ def main(**args):
             **framework_config,
             **hyperparam_config,
             **evaluation_config
-        }
+        },
+        verbose=0
     )
 
     return experiment

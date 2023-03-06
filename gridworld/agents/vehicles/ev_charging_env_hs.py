@@ -164,12 +164,14 @@ class HSEVChargingEnv(ComponentEnv):
 
         step_cost = self.current_cost * self._real_power + kwargs['grid_cost'] * self.state["real_power_unserved"] 
 
-        reward_meta = {}
+        step_meta = {}
 
         reward = -step_cost
         
-        reward_meta["ev_step_cost"] = step_cost
-        return reward, reward_meta
+        step_meta["device_id"] = self.name
+        step_meta["timestamp"] = kwargs['timestamp']
+        step_meta["cost"] = step_cost
+        return reward, {"step_meta": step_meta}
    
     def step(self, action: np.ndarray = None, **kwargs) -> Tuple[np.ndarray, float, bool, dict]:
 
