@@ -35,7 +35,7 @@ COPY . /PowerGridworld/
 #RUN conda create -n gridworld python=3.8 -y
 #RUN conda activate gridworld
 
-RUN python3 -m venv --copies ./venv
+RUN python -m venv --copies ./venv
 
 RUN . ./venv/bin/activate
 
