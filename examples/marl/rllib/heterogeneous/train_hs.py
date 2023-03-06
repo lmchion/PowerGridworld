@@ -82,7 +82,9 @@ class HSDataLoggerCallback(LoggerCallback):
             for device in device_list:
                 device_data = {}
                 device_data['device_id'] = device
-                device_data['usage_data'] = df[df["device"]==device].drop("device", axis=1).values.tolist()
+                tmp_device_data = df[df["device"]==device].drop("device", axis=1)
+                device_data['columns'] = list(tmp_device_data.columns.values)
+                device_data['usage_data'] = tmp_device_data.values.tolist()
                 final_json.append(device_data)
             
             with open(dump_file_name, mode='w+') as thisfile:
