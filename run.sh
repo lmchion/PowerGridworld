@@ -38,29 +38,38 @@ done
 echo "building docker container"
 aws s3 cp $infolder data/inputs --recursive
 
-cp data/inputs/devices_profile_hs.csv gridworld/agents/devices/data
-cp data/inputs/grid_cost.csv gridworld/scenarios/data
-cp data/inputs/pv_profile_hs.csv gridworld/agents/pv/profiles
-cp data/inputs/vehicles_hs.csv gridworld/agents/vehicles/vehicles_hs.csv
-cp data/inputs/env_config.json examples/marl/rllib/heterogeneous/env_config.json
+cp /data/inputs/devices_profile_hs.csv gridworld/agents/devices/data
+cp /data/inputs/grid_cost.csv gridworld/scenarios/data
+cp /data/inputs/pv_profile_hs.csv gridworld/agents/pv/profiles
+cp /data/inputs/vehicles_hs.csv gridworld/agents/vehicles/vehicles_hs.csv
+cp /data/inputs/env_config.json examples/marl/rllib/heterogeneous/env_config.json
 
 echo "building docker container"
 sudo docker build . -t homesteward:latest
 
+
+#sudo docker container run -it homesteward:latest /bin/bash
+
+
 #echo "run container in a detached mode"
-#sudo docker run --name hscontainer -d homesteward:latest
+#sudo docker run --name hscontainer -d homesteward:latest -v /data/outputs:/PowerGridworld/examples/marl/rllib/heterogeneous/ray_results/PPO
 
 
 #docker exec -it hscontainer /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.sh
+docker run -it --name hscontainer -d homesteward:latest bash /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.sh -v /data/outputs:/PowerGridworld/examples/marl/rllib/heterogeneous/ray_results/PPO
+
+#sudo docker container run -it homesteward:latest
+
+#docker exec homesteward:latest /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.sh
 
 # echo "sleep for 5 seconds"
 # sleep 5
 
 # echo "Kill the running container after the tests"
-# docker stop mycontain
+docker stop hscontainer
 
 # echo "Delete the built docker container"
-# docker rm mycontain
+docker rm hscontainer
 
 # echo "prune images" 
 # docker image prune -f

@@ -29,7 +29,7 @@ RUN set -eux; \
 
 COPY . /PowerGridworld/
 
-RUN python3 -m pip install --upgrade pip
+#RUN python3 -m pip install --upgrade pip
 
 
 #RUN conda create -n gridworld python=3.8 -y
@@ -40,8 +40,8 @@ RUN python3 -m venv --copies ./venv
 RUN . ./venv/bin/activate
 
 RUN pip install -e /PowerGridworld
-RUN pip install -r /PowerGridworld/requirements.txt --default-timeout=1000 --no-cache-dir
-RUN pip install -r /PowerGridworld/examples/marl/rllib/requirements.txt --default-timeout=1000 --no-cache-dir
+RUN pip install -r /PowerGridworld/requirements.txt --default-timeout=1000
+RUN pip install -r /PowerGridworld/examples/marl/rllib/requirements.txt --default-timeout=1000 
 
 # # copy poetry package definitions
 # COPY pyproject.toml poetry.lock ./
@@ -77,6 +77,8 @@ RUN set -eux; \
 COPY --from=builder /venv /venv
 
 COPY . /PowerGridworld
+
+RUN chmod +x /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.sh
 
 #CMD ["uvicorn","src.main:app","--port","8000","--host","0.0.0.0"]
 #RUN python /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.py 
