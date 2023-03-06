@@ -1,7 +1,8 @@
-import os
+import os,sys
 from os import system
 
 import pandas as pd
+import json
 
 from gridworld import MultiAgentEnv, MultiComponentEnv
 from gridworld.agents.energy_storage import HSEnergyStorageEnv
@@ -9,11 +10,13 @@ from gridworld.agents.pv import HSPVEnv, PVEnv
 from gridworld.agents.vehicles import HSEVChargingEnv
 from gridworld.agents.devices import HSDevicesEnv
 
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 def load_grid_cost(start_time: str = None, end_time: str = None) -> list:
     """Returns exogenous data dataframe, and state space model (per-zone) dict."""
 
-    THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+    
 
     df = pd.read_csv(os.path.join(THIS_DIR, "data/grid_cost.csv"), index_col=0)
     df.index = pd.DatetimeIndex(df.index)
@@ -32,90 +35,31 @@ def load_grid_cost(start_time: str = None, end_time: str = None) -> list:
     return _df['grid_cost'].tolist()
 
 
-def make_env_config( rescale_spaces=True):
-
-    start_time="08-31-2020 00:00:00"
-    end_time="08-31-2020 23:55:00"
-    # Make the multi-component building
-    grid_cost = load_grid_cost(start_time, end_time)
-    pv = {
-        "name": "pv",
-        "cls": HSPVEnv,
-        "config": {
-            "profile_csv": "pv_profile_hs.csv",
-            "scaling_factor": 40.,
-            "rescale_spaces": rescale_spaces
-        }
-    }
-
-    battery = {
-        "name": "storage",
-        "cls": HSEnergyStorageEnv,
-        "config": {
-            "max_power"                 : 10.0,
-            "storage_range"             : (1., 28.),
-            "initial_storage_mean"      : 14.0,  # 7*2
-            "initial_storage_std"       : 2.828, # 2*sqrt(2)
-            "charge_efficiency"         : 0.95,
-            "discharge_efficiency"      : 0.95,
-            "init_storage"              : 0.0,
-            "rescale_spaces"            : rescale_spaces,
-            'initial_storage_cost'      : min(grid_cost),
-            'max_storage_cost'          : max(grid_cost)
-        } 
-    }
-
-    ev = {
-            "name": "ev-charging",
-            "cls": HSEVChargingEnv,
-            "config": {
-                "num_vehicles"          : 1,
-                "minutes_per_step"      : 5,
-                "max_charge_rate_kw"    : 11.,
-                "peak_threshold"        : 200.,
-                #"vehicle_multiplier"    : 40.,
-                "rescale_spaces"        : rescale_spaces,
-                "max_charge_cost"       :  max(grid_cost)
-            }
-        }
-    
-
-    devs = {
-            "name": "other-devices",
-            "cls": HSDevicesEnv,
-            "config": {
-                'profile_csv' : 'devices_profile_hs.csv' ,
-                'profile_path' : None,
-                'scaling_factor' :  1.,
-                'rescale_spaces':  True,
-                'max_episode_steps':  None,
-
-            }
-        }
 
 
+def make_env_config():
 
+    with open(os.path.join(THIS_DIR, "data/env_config.json"), 'r') as f:
+        env_config = json.load(f)
 
-
-    # this defines the arbitrary order of devices and the action that they take in the composite environment.
-    house_components = [pv, battery, ev, devs ]
-
-
-
-    env_config={ "components"       : house_components,
-                 "name"             : 'house',
-                 "start_time"       : start_time,
-                 "end_time"         : end_time,
-                 "control_timedelta": pd.Timedelta(300, "s"),
-                 'max_grid_power'   :  48,
-                 'max_episode_steps' : 288
-                 
-                }
-
+    grid_cost = load_grid_cost(env_config['start_time'], env_config['end_time'])
     
     env_config['grid_cost'] = grid_cost
 
+    for elem in env_config['components']:
+        elem['cls']= getattr(sys.modules[__name__], elem['cls'])
+
+    env_config['control_timedelta']  =  pd.Timedelta(env_config['control_timedelta'], env_config['control_time_delta_units'])
+    del env_config['control_time_delta_units']
+
     return env_config
+
+if __name__ == "__main__":
+    
+    test=make_env_config()
+    print(test)
+    r=1
+
 
 
 

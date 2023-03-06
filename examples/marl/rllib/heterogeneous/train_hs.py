@@ -87,9 +87,7 @@ def main(**args):
 
     # Create the env configuration with option to change max episode steps
     # for debugging.
-    env_config = make_env_config(
-        rescale_spaces=True
-    )
+    env_config = make_env_config()
     env_config.update({"max_episode_steps": args["max_episode_steps"]})
 
     print("ENV CONFIG", env_config)

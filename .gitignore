@@ -131,3 +131,4 @@ dmypy.json
 .vscode
 
 examples/marl/rllib/heterogeneous/ray_results/*
+data/*
