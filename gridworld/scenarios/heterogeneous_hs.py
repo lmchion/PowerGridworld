@@ -1,23 +1,27 @@
 import os
+import time
 from os import system
 
 import pandas as pd
 
 from gridworld import MultiAgentEnv, MultiComponentEnv
+from gridworld.agents.devices import HSDevicesEnv
 from gridworld.agents.energy_storage import HSEnergyStorageEnv
 from gridworld.agents.pv import HSPVEnv, PVEnv
 from gridworld.agents.vehicles import HSEVChargingEnv
-from gridworld.agents.devices import HSDevicesEnv
 
 
-def load_grid_cost(start_time: str = None, end_time: str = None) -> list:
+def load_grid_cost(start_time: str = None, end_time: str = None):
     """Returns exogenous data dataframe, and state space model (per-zone) dict."""
 
     THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    df = pd.read_csv(os.path.join(THIS_DIR, "data/grid_cost.csv"), index_col=0)
+    df = pd.read_csv(os.path.join(THIS_DIR, "data/grid_cost.csv"), delimiter=',')
+    time_col = df["time"]
+    df = df.set_index("time")
     df.index = pd.DatetimeIndex(df.index)
 
+    df['timestamp'] = time_col.to_list()
     start_time = pd.Timestamp(start_time) if start_time else df.index[0]
     end_time = pd.Timestamp(end_time) if end_time else df.index[-1]
 
@@ -29,7 +33,7 @@ def load_grid_cost(start_time: str = None, end_time: str = None) -> list:
             "resulted in empty dataframe.  First and last indices are " +
             f"({df.index[0]}, {df.index[-1]}), choose values in this range.")
 
-    return _df['grid_cost'].tolist()
+    return (_df['timestamp'].tolist(), _df['grid_cost'].tolist())
 
 
 def make_env_config( rescale_spaces=True):
@@ -37,7 +41,7 @@ def make_env_config( rescale_spaces=True):
     start_time="08-31-2020 00:00:00"
     end_time="08-31-2020 23:55:00"
     # Make the multi-component building
-    grid_cost = load_grid_cost(start_time, end_time)
+    timestamps, grid_cost = load_grid_cost(start_time, end_time)
     pv = {
         "name": "pv",
         "cls": HSPVEnv,
@@ -112,8 +116,8 @@ def make_env_config( rescale_spaces=True):
                  
                 }
 
-    
     env_config['grid_cost'] = grid_cost
+    env_config['timestamps'] = timestamps
 
     return env_config
 
