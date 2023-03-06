@@ -3,6 +3,18 @@
 
 FROM python:3.8-slim as builder
 
+# set working directory
+#WORKDIR /app
+
+# Turns off writing .pyc files
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Seems to speed things up
+ENV PYTHONUNBUFFERED=1
+
+# add gridworld env to path
+ENV PATH /venv/bin:$PATH
+
 RUN set -eux; \    
     apt-get update; \
     apt-get upgrade -y; \
@@ -17,10 +29,17 @@ RUN set -eux; \
 
 COPY . /PowerGridworld/
 
-RUN ls
-RUN echo "$PWD"
+RUN python3 -m pip install --upgrade pip
 
-RUN python -m pip install --upgrade pip
+
+#RUN conda create -n gridworld python=3.8 -y
+#RUN conda activate gridworld
+
+RUN python3 -m venv --copies ./venv
+
+RUN . ./venv/bin/activate
+
+RUN pip install -e /PowerGridworld
 RUN pip install -r /PowerGridworld/requirements.txt --default-timeout=1000 --no-cache-dir
 RUN pip install -r /PowerGridworld/examples/marl/rllib/requirements.txt --default-timeout=1000 --no-cache-dir
 
@@ -39,21 +58,25 @@ RUN pip install -r /PowerGridworld/examples/marl/rllib/requirements.txt --defaul
 ######  RUNNER ###########
 
 
-# FROM python:3.8-slim as runner
+FROM python:3.8-slim as runner
 
-# RUN set -eux; \
-#     apt-get update; \
-#     apt-get upgrade -y; \
-#     apt-get install -y curl build-essential libffi-dev ;  \
-#     rm -rf /var/lib/apt/lists/*
+# Extra python env
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PATH="/venv/bin:$PATH"
 
-# COPY --from=builder /venv /venv
-# ENV PATH /venv/bin:$PATH
+#WORKDIR /app
 
-# COPY . ./
+RUN set -eux; \
+     apt-get update; \
+     apt-get upgrade -y; \
+     apt-get install -y curl build-essential libffi-dev ;  \
+     rm -rf /var/lib/apt/lists/*
 
-# CMD ["uvicorn","src.main:app","--port","8000","--host","0.0.0.0"]
+COPY --from=builder /venv /venv
 
-# HEALTHCHECK --start-period=10s  --retries=4  CMD curl --fail http://localhost:8000/health || exit 1
+COPY . /PowerGridworld
 
-#HEALTHCHECK --start-period=10s  --retries=4  CMD python -c "import requests; requests.get('http://localhost:8000/health', timeout=4)" || exit 1
+#CMD ["uvicorn","src.main:app","--port","8000","--host","0.0.0.0"]
+#RUN python /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.py 
