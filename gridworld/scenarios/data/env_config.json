@@ -1,0 +1,63 @@
+{
+    "name": "house",
+    "start_time": "08-31-2020 00:00:00",
+    "end_time": "08-31-2020 23:55:00",
+    "control_timedelta": 300,
+    "control_time_delta_units": "s",
+    "max_grid_power": 48,
+    "max_episode_steps": 288,
+    "components": [
+        {
+            "name": "pv",
+            "cls": "HSPVEnv",
+            "config": {
+                "profile_csv": "pv_profile_hs.csv",
+                "scaling_factor": 1.0,
+                "rescale_spaces": true
+            }
+        },
+        {
+            "name": "storage",
+            "cls": "HSEnergyStorageEnv",
+            "config": {
+                "max_power": 10.0,
+                "storage_range": [
+                    1.0,
+                    28.0
+                ],
+                "initial_storage_mean": 14.0,
+                "initial_storage_std": 2.828,
+                "charge_efficiency": 0.95,
+                "discharge_efficiency": 0.95,
+                "init_storage": 0.0,
+                "rescale_spaces": true,
+                "initial_storage_cost": 0.24171,
+                "max_storage_cost": 0.55422
+            }
+        },
+        {
+            "name": "ev-charging",
+            "cls": "HSEVChargingEnv",
+            "config": {
+                "num_vehicles": 1,
+                "minutes_per_step": 5,
+                "max_charge_rate_kw": 11.0,
+                "peak_threshold": 200.0,
+                "vehicle_multiplier": 1.0,
+                "rescale_spaces": true,
+                "max_charge_cost": 0.55422
+            }
+        },
+        {
+            "name": "other-devices",
+            "cls": "HSDevicesEnv",
+            "config": {
+                "profile_csv": "devices_profile_hs.csv",
+                "profile_path": null,
+                "scaling_factor": 1.0,
+                "rescale_spaces": true,
+                "max_episode_steps": null
+            }
+        }
+    ]
+}

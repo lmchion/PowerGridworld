@@ -1,23 +1,55 @@
 
 
-# cd lab2
-# echo "source poetry environment"
-# source $(poetry env info --path)/bin/activate
-# rm -rf model_pipeline.pkl
 
-# echo "train cal housing model"
-# python3 ./trainer/train.py
-
-mkdir inputs
-aws s3 cp s3://home-steward-s3bucket /inputs --recursive
+#!/usr/bin/bash
 
 
-# echo "copy model to src dir"
-# mv model_pipeline.pkl src
-git clone https://github.com/lmchion/PowerGridworld.git
+Help()
+{
+   # Display Help
+   echo "This script run training ."
+   echo
+   echo "Syntax: scriptTemplate [-i|o|h]"
+   echo "options:"
+   echo "i     input location in s3 directory (i.e <bucket name>/base-train/inputs/)"
+   echo "o     output location in s3 directory (i.e <bucket name>/base-train/outputs/)"
+   echo "h     help"
+   echo
+}
+
+
+
+while getopts i:o:h: flag
+
+do
+        case "${flag}" in
+                i) infolder=${OPTARG}
+                        ;;
+                o) outfolder=${OPTARG}
+                         ;;
+                h) Help
+                *) echo "Invalid option: -$flag" 
+                   Help
+                ;;
+        esac
+done
 
 echo "building docker container"
-docker build . -t homesteward:latest
+aws s3 cp $infolder data/inputs --recursive
+
+cp data/inputs/devices_profile_hs.csv gridworld/agents/devices/data
+cp data/inputs/grid_cost.csv gridworld/scenarios/data
+cp data/inputs/pv_profile_hs.csv gridworld/agents/pv/profiles
+cp data/inputs/vehicles_hs.csv gridworld/agents/vehicles/vehicles_hs.csv
+cp data/inputs/env_config.json examples/marl/rllib/heterogeneous/env_config.json
+
+#echo "building docker container"
+#docker build . -t homesteward:latest
+
+
+
+
+
 
 # echo "build container in a detached mode"
 # docker run --name mycontain -d -p 8000:8000 api_test:latest

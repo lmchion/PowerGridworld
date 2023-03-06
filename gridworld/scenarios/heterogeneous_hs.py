@@ -1,4 +1,6 @@
+import json
 import os
+import sys
 import time
 from os import system
 
@@ -10,11 +12,11 @@ from gridworld.agents.energy_storage import HSEnergyStorageEnv
 from gridworld.agents.pv import HSPVEnv, PVEnv
 from gridworld.agents.vehicles import HSEVChargingEnv
 
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 def load_grid_cost(start_time: str = None, end_time: str = None):
     """Returns exogenous data dataframe, and state space model (per-zone) dict."""
-
-    THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
     df = pd.read_csv(os.path.join(THIS_DIR, "data/grid_cost.csv"), delimiter=',')
     time_col = df["time"]
@@ -36,90 +38,32 @@ def load_grid_cost(start_time: str = None, end_time: str = None):
     return (_df['timestamp'].tolist(), _df['grid_cost'].tolist())
 
 
-def make_env_config( rescale_spaces=True):
 
-    start_time="08-31-2020 00:00:00"
-    end_time="08-31-2020 23:55:00"
-    # Make the multi-component building
-    timestamps, grid_cost = load_grid_cost(start_time, end_time)
-    pv = {
-        "name": "pv",
-        "cls": HSPVEnv,
-        "config": {
-            "profile_csv": "pv_profile_hs.csv",
-            "scaling_factor": 40.,
-            "rescale_spaces": rescale_spaces
-        }
-    }
 
-    battery = {
-        "name": "storage",
-        "cls": HSEnergyStorageEnv,
-        "config": {
-            "max_power"                 : 10.0,
-            "storage_range"             : (1., 28.),
-            "initial_storage_mean"      : 14.0,  # 7*2
-            "initial_storage_std"       : 2.828, # 2*sqrt(2)
-            "charge_efficiency"         : 0.95,
-            "discharge_efficiency"      : 0.95,
-            "init_storage"              : 0.0,
-            "rescale_spaces"            : rescale_spaces,
-            'initial_storage_cost'      : min(grid_cost),
-            'max_storage_cost'          : max(grid_cost)
-        } 
-    }
+def make_env_config():
 
-    ev = {
-            "name": "ev-charging",
-            "cls": HSEVChargingEnv,
-            "config": {
-                "num_vehicles"          : 1,
-                "minutes_per_step"      : 5,
-                "max_charge_rate_kw"    : 11.,
-                "peak_threshold"        : 200.,
-                #"vehicle_multiplier"    : 40.,
-                "rescale_spaces"        : rescale_spaces,
-                "max_charge_cost"       :  max(grid_cost)
-            }
-        }
+    with open(os.path.join(THIS_DIR, "data/env_config.json"), 'r') as f:
+        env_config = json.load(f)
+
+    timestamps, grid_cost = load_grid_cost(env_config['start_time'], env_config['end_time'])
     
-
-    devs = {
-            "name": "other-devices",
-            "cls": HSDevicesEnv,
-            "config": {
-                'profile_csv' : 'devices_profile_hs.csv' ,
-                'profile_path' : None,
-                'scaling_factor' :  1.,
-                'rescale_spaces':  True,
-                'max_episode_steps':  None,
-
-            }
-        }
-
-
-
-
-
-    # this defines the arbitrary order of devices and the action that they take in the composite environment.
-    house_components = [pv, battery, ev, devs ]
-
-
-
-    env_config={ "components"       : house_components,
-                 "name"             : 'house',
-                 "start_time"       : start_time,
-                 "end_time"         : end_time,
-                 "control_timedelta": pd.Timedelta(300, "s"),
-                 'max_grid_power'   :  48,
-                 'max_episode_steps' : 288
-                 
-                }
-
     env_config['grid_cost'] = grid_cost
     env_config['timestamps'] = timestamps
 
+    for elem in env_config['components']:
+        elem['cls']= getattr(sys.modules[__name__], elem['cls'])
+
+    env_config['control_timedelta']  =  pd.Timedelta(env_config['control_timedelta'], env_config['control_time_delta_units'])
+    del env_config['control_time_delta_units']
+
     return env_config
+
+if __name__ == "__main__":
+    
+    test=make_env_config()
+    print(test)
+    r=1
+
 
 
 
