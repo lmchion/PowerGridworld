@@ -27,7 +27,7 @@ RUN set -eux; \
 # and any third-party repositories you may have configured
 # apt-get upgrade -> ommand downloads and installs the updates for each outdated package and dependency on your system
 
-COPY . /PowerGridworld/
+
 
 #RUN python3 -m pip install --upgrade pip
 
@@ -39,9 +39,11 @@ RUN python -m venv --copies ./venv
 
 RUN . ./venv/bin/activate
 
-RUN pip install -e /PowerGridworld
-RUN pip install -r /PowerGridworld/requirements.txt --default-timeout=1000
-RUN pip install -r /PowerGridworld/examples/marl/rllib/requirements.txt --default-timeout=1000 
+COPY requirements_hs.txt requirements_hs.txt
+
+RUN pip install -r requirements_hs.txt --default-timeout=1000
+
+
 
 # # copy poetry package definitions
 # COPY pyproject.toml poetry.lock ./
@@ -71,12 +73,14 @@ ENV PATH="/venv/bin:$PATH"
 RUN set -eux; \
      apt-get update; \
      apt-get upgrade -y; \
-     apt-get install -y curl build-essential libffi-dev ;  \
+     apt-get install -y curl build-essential libffi-dev procps;  \
      rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /venv /venv
 
 COPY . /PowerGridworld
+RUN . ./venv/bin/activate
+RUN pip install -e /PowerGridworld
 
 RUN chmod +x /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.sh
 
