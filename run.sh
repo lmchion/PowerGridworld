@@ -38,39 +38,35 @@ done
 echo "building docker container"
 aws s3 cp $infolder data/inputs --recursive
 
+sudo rm -rf data/outputs/*
 
+wait 20
 
 echo "building docker container"
 sudo docker build . -t homesteward:latest
 
 
-#sudo docker container run -it homesteward:latest /bin/bash
+echo "run container in a detached mode"
+sudo docker run -v $(pwd)/data/outputs:/PowerGridworld/data/outputs --name hscontainer -it  -d homesteward:latest bash /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.sh 
+
+status_code="$(docker container wait hscontainer)"
+
+echo "Status code of Home Steward Training: ${status_code}"
 
 
-#echo "run container in a detached mode"
-#sudo docker run --name hscontainer -d homesteward:latest -v /data/outputs:/PowerGridworld/examples/marl/rllib/heterogeneous/ray_results/PPO
 
-#docker exec -it mycontainer /bin/bash
+#to check inside the container
+#docker exec -it hscontainer /bin/bash
 
-#sudo docker run --name hscontainer -d homesteward:latest
 
-#docker exec -it hscontainer /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.sh
-docker run -it --name hscontainer -d homesteward:latest bash /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.sh \ 
-                 -v data/outputs:/PowerGridworld/examples/marl/rllib/heterogeneous/ray_results/PPO \
-                 -v data/inputs:/PowerGridworld/data/inputs
+aws s3 cp data/outputs/ray_results/PPO $outfolder --recursive
 
-#sudo docker container run -it homesteward:latest
 
-#docker exec homesteward:latest /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.sh
-
-# echo "sleep for 5 seconds"
-# sleep 5
-
-# echo "Kill the running container after the tests"
+echo "stop the running container"
 docker stop hscontainer
 
-# echo "Delete the built docker container"
+echo "Delete the built docker container"
 docker rm hscontainer
 
-# echo "prune images" 
-# docker image prune -f
+#echo "prune images" 
+#docker image prune -f
