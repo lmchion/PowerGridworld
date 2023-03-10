@@ -7,7 +7,7 @@ print(directory)
 
 list_files = subprocess.run(['python','-u','train_hs.py','--stop-iters','1',
                              '--num-cpus','2','--num-gpus','0','--local-dir','./ray_results',
-                             '--max-episode-steps','250'],
+                             '--max-episode-steps','288'],
                             cwd=directory)
 
 print("The exit code was: %d" % list_files.returncode)

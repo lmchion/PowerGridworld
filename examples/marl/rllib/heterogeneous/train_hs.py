@@ -30,7 +30,7 @@ class HSAgentTrainingCallback(DefaultCallbacks):
         # TODO change this in subcomponents to use the component name to remove hard-coding.
         step_meta = episode.last_info_for().get('step_meta', None)
         for step_meta_item in step_meta:
-            episode.media["episode_data"].append([step_meta_item["device_id"], step_meta_item["timestamp"], step_meta_item["cost"]])
+            episode.media["episode_data"].append([step_meta_item["device_id"], step_meta_item["timestamp"], step_meta_item["cost"], step_meta_item["action"], step_meta_item["pv_power"], step_meta_item["es_power"], step_meta_item["grid_power"]])
         #episode.media["episode_data"]['es_step_cost'].append(episode.last_info_for().get('es_step_cost', None))
 
     def on_episode_end(
@@ -66,14 +66,15 @@ class HSDataLoggerCallback(LoggerCallback):
 
             episode_data = data[-num_episodes:]
 
+            extract_columns = ["device", "timestamp", "cost", "action", "pv_power", "es_power", "grid_power"]
             #logger.info("Trial Result dumping to", dump_file_name)
-            df = pd.DataFrame(np.array([]).reshape((-1, 3)), columns = ["device", "timestamp", "cost"])
+            df = pd.DataFrame(np.array([]).reshape((-1, len(extract_columns))), columns = extract_columns)
             for tranche in episode_data:
                 if not tranche:
                     logger.info("Episode data tranche is empty while logging. skipping.")
                     continue
                 
-                tmp_df = pd.DataFrame(tranche, columns = ["device", "timestamp", "cost"])
+                tmp_df = pd.DataFrame(tranche, columns=extract_columns)
 
                 df = df.append(tmp_df)
 

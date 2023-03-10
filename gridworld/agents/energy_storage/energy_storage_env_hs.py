@@ -235,6 +235,15 @@ class HSEnergyStorageEnv(ComponentEnv):
         obs, obs_meta = self.get_obs(**kwargs)
         rew, rew_meta = self.step_reward(**kwargs)
 
+        rew_meta['step_meta']['action'] = action.tolist() 
+        rew_meta['step_meta']['pv_power'] = kwargs['pv_power']
+        rew_meta['step_meta']['es_power'] = kwargs['es_power']
+        rew_meta['step_meta']['grid_power'] = kwargs['grid_power']
+
+        if power > 0.0: # discharging for setting the pv and grid power to 0.
+            rew_meta['step_meta']['pv_power'] = 0.0
+            rew_meta['step_meta']['grid_power'] = 0.0
+
         obs_meta.update(rew_meta)
         self.simulation_step += 1
 
