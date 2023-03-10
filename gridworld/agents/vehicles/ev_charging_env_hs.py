@@ -278,10 +278,19 @@ class HSEVChargingEnv(ComponentEnv):
             grid_capacity=kwargs['grid_power']
 
             solar_power=min(power,solar_capacity)
-            battery_power = min( battery_capacity, power - solar_power ) 
-            grid_power=min( grid_capacity, power - solar_power - battery_power )
 
-            self.current_cost = (solar_cost*solar_power + grid_cost*grid_power + battery_cost*battery_power ) / (solar_power+ grid_power+battery_power)
+            # if we want to consider the battery cost and conserve it for when 
+            # grid is more expensive than battery, this below check is required.
+            # but then the battery cost in the current_cost calculation can be ignored.
+            if battery_cost < grid_cost:
+                battery_power = min( battery_capacity, power - solar_power ) 
+                grid_power=min( grid_capacity, power - solar_power - battery_power )
+            elif battery_cost >= grid_cost:
+                grid_power=min( grid_capacity, power - solar_power)
+                battery_power = min( battery_capacity, power - solar_power - grid_power ) 
+
+            # ignore battery cost here since it has already been counted when the battery was charged.
+            self.current_cost = (solar_cost*solar_power + grid_cost*grid_power) / (solar_power+ grid_power+battery_power)
 
             kwargs['pv_power']=max(0.0, solar_capacity-solar_power)
             kwargs['es_power']=max(0.0, battery_capacity-battery_power)
