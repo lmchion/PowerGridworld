@@ -165,10 +165,10 @@ class HSDevicesEnv(ComponentEnv):
 
             grid_cost=kwargs['grid_cost']
             grid_capacity=kwargs['grid_power']
-
+            
             solar_power=min(self._real_power,solar_capacity)
             battery_power = min( battery_capacity, self._real_power - solar_power ) 
-            grid_power=min( grid_capacity, self._real_power - battery_power )
+            grid_power=min( grid_capacity, self._real_power - solar_power - battery_power)
 
             #print("power ",self._real_power,solar_power, grid_power,battery_power,str(kwargs))
 
@@ -179,6 +179,11 @@ class HSDevicesEnv(ComponentEnv):
             kwargs['grid_power']=max(0.0, grid_capacity-grid_power)
 
         rew, rewmeta = self.step_reward(**kwargs)
+        rewmeta['step_meta']['action'] = action.tolist()
+        rewmeta['step_meta']['pv_power'] = kwargs['pv_power']
+        rewmeta['step_meta']['es_power'] = kwargs['es_power']
+        rewmeta['step_meta']['grid_power'] = kwargs['grid_power']
+
         obs_meta.update(rewmeta)
         self.index += 1
 
