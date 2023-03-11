@@ -28,9 +28,28 @@ class HSAgentTrainingCallback(DefaultCallbacks):
         self, *, worker, base_env, episode, env_index, **kwargs
     ):
         # TODO change this in subcomponents to use the component name to remove hard-coding.
-        step_meta = episode.last_info_for().get('step_meta', None)
+        ep_lastinfo = episode.last_info_for()
+        step_meta = ep_lastinfo.get('step_meta', None)
+        grid_cost = ep_lastinfo.get('grid_cost', None)
+        es_cost = ep_lastinfo.get('es_cost', None)
+        hvac_power = ep_lastinfo.get('hvac_power', None)
+        other_power = ep_lastinfo.get('other_power', None)
+        # step_meta = episode.last_info_for().get('step_meta', None)
+        # step_meta = episode.last_info_for().get('step_meta', None)
         for step_meta_item in step_meta:
-            episode.media["episode_data"].append([step_meta_item["device_id"], step_meta_item["timestamp"], step_meta_item["cost"], step_meta_item["action"], step_meta_item["pv_power"], step_meta_item["es_power"], step_meta_item["grid_power"]])
+            episode.media["episode_data"].append([step_meta_item["device_id"], 
+                                                  step_meta_item["timestamp"], 
+                                                  step_meta_item["cost"], 
+                                                  step_meta_item["reward"],
+                                                  step_meta_item["action"], 
+                                                  step_meta_item["pv_power"], 
+                                                  step_meta_item["es_power"], 
+                                                  step_meta_item["grid_power"],
+                                                  grid_cost,
+                                                  es_cost,
+                                                  hvac_power,
+                                                  other_power,
+                                                  step_meta_item["device_custom_info"]])
         #episode.media["episode_data"]['es_step_cost'].append(episode.last_info_for().get('es_step_cost', None))
 
     def on_episode_end(
@@ -66,7 +85,19 @@ class HSDataLoggerCallback(LoggerCallback):
 
             episode_data = data[-num_episodes:]
 
-            extract_columns = ["device", "timestamp", "cost", "action", "pv_power", "es_power", "grid_power"]
+            extract_columns = ["device", 
+                               "timestamp", 
+                               "cost", 
+                               "reward",
+                               "action", 
+                               "pv_power", 
+                               "es_power", 
+                               "grid_power",
+                               "grid_cost",
+                                "es_cost",
+                                "hvac_power",
+                                "other_power",
+                                "device_custom_info"]
             #logger.info("Trial Result dumping to", dump_file_name)
             df = pd.DataFrame(np.array([]).reshape((-1, len(extract_columns))), columns = extract_columns)
             for tranche in episode_data:

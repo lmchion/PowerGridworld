@@ -171,6 +171,7 @@ class HSEVChargingEnv(ComponentEnv):
         step_meta["device_id"] = self.name
         step_meta["timestamp"] = kwargs['timestamp']
         step_meta["cost"] = step_cost
+        step_meta["reward"] = reward
         return reward, {"step_meta": step_meta}
    
     def step(self, action: np.ndarray = None, **kwargs) -> Tuple[np.ndarray, float, bool, dict]:
@@ -290,7 +291,8 @@ class HSEVChargingEnv(ComponentEnv):
                 battery_power = min( battery_capacity, power - solar_power - grid_power ) 
 
             # ignore battery cost here since it has already been counted when the battery was charged.
-            self.current_cost = (solar_cost*solar_power + grid_cost*grid_power) / (solar_power+ grid_power+battery_power)
+            if solar_power+grid_power != 0:
+                self.current_cost = (solar_cost*solar_power + grid_cost*grid_power) / (solar_power+ grid_power)
 
             kwargs['pv_power']=max(0.0, solar_capacity-solar_power)
             kwargs['es_power']=max(0.0, battery_capacity-battery_power)
@@ -305,6 +307,7 @@ class HSEVChargingEnv(ComponentEnv):
         rew_meta['step_meta']['pv_power'] = kwargs['pv_power']
         rew_meta['step_meta']['es_power'] = kwargs['es_power']
         rew_meta['step_meta']['grid_power'] = kwargs['grid_power']
+        rew_meta['step_meta']['device_custom_info'] = {'power_unserved': unserved}
 
         done = self.is_terminal()
 
