@@ -3,7 +3,6 @@ cluster see, e.g., https://docs.ray.io/en/latest/cluster/deploy.html."""
 import json
 import os
 import os.path as osp
-import threading
 
 import numpy as np
 import pandas as pd
@@ -28,14 +27,14 @@ class HSAgentTrainingCallback(DefaultCallbacks):
         self, *, worker, base_env, episode, env_index, **kwargs
     ):
         # TODO change this in subcomponents to use the component name to remove hard-coding.
+
         ep_lastinfo = episode.last_info_for()
         step_meta = ep_lastinfo.get('step_meta', None)
         grid_cost = ep_lastinfo.get('grid_cost', None)
         es_cost = ep_lastinfo.get('es_cost', None)
         hvac_power = ep_lastinfo.get('hvac_power', None)
         other_power = ep_lastinfo.get('other_power', None)
-        # step_meta = episode.last_info_for().get('step_meta', None)
-        # step_meta = episode.last_info_for().get('step_meta', None)
+        
         for step_meta_item in step_meta:
             episode.media["episode_data"].append([step_meta_item["device_id"], 
                                                   step_meta_item["timestamp"], 
@@ -50,12 +49,6 @@ class HSAgentTrainingCallback(DefaultCallbacks):
                                                   hvac_power,
                                                   other_power,
                                                   step_meta_item["device_custom_info"]])
-        #episode.media["episode_data"]['es_step_cost'].append(episode.last_info_for().get('es_step_cost', None))
-
-    def on_episode_end(
-        self, *, worker, base_env, policies, episode, env_index, **kwargs
-    ):
-        episode_data = episode.media["episode_data"]
 
 class HSDataLoggerCallback(LoggerCallback):
     def __init__(self):
@@ -68,61 +61,55 @@ class HSDataLoggerCallback(LoggerCallback):
         os.makedirs(self._trial_local_dir[trial], exist_ok=True)
 
     def log_trial_result(self, iteration, trial, result):
-        file_lock = threading.Lock()
+        episode_media = result["episode_media"]
+        if "episode_data" not in episode_media:
+            return
 
-        with file_lock:
-            episode_media = result["episode_media"]
-            if "episode_data" not in episode_media:
-                return
+        step = result['timesteps_total']
+        dump_file_name = osp.join(
+            self._trial_local_dir[trial], f"data-{step:08d}.json"
+        )
 
-            step = result['timesteps_total']
-            dump_file_name = osp.join(
-                self._trial_local_dir[trial], f"data-{step:08d}.json"
-            )
+        data = episode_media["episode_data"]            
 
-            num_episodes = result["episodes_this_iter"]
-            data = episode_media["episode_data"]            
+        episode_data = data[-1]
 
-            episode_data = data[-num_episodes:]
+        extract_columns = ["device", 
+                            "timestamp", 
+                            "cost", 
+                            "reward",
+                            "action", 
+                            "pv_power", 
+                            "es_power", 
+                            "grid_power",
+                            "grid_cost",
+                            "es_cost",
+                            "hvac_power",
+                            "other_power",
+                            "device_custom_info"]
 
-            extract_columns = ["device", 
-                               "timestamp", 
-                               "cost", 
-                               "reward",
-                               "action", 
-                               "pv_power", 
-                               "es_power", 
-                               "grid_power",
-                               "grid_cost",
-                                "es_cost",
-                                "hvac_power",
-                                "other_power",
-                                "device_custom_info"]
-            #logger.info("Trial Result dumping to", dump_file_name)
-            df = pd.DataFrame(np.array([]).reshape((-1, len(extract_columns))), columns = extract_columns)
-            for tranche in episode_data:
-                if not tranche:
-                    logger.info("Episode data tranche is empty while logging. skipping.")
-                    continue
-                
-                tmp_df = pd.DataFrame(tranche, columns=extract_columns)
+        if not episode_data:
+            logger.info("Episode data tranche is empty while logging. skipping.")
+        
+        df = pd.DataFrame(episode_data, columns=extract_columns)
 
-                df = df.append(tmp_df)
+        device_list = df['device'].unique()
+        final_json = []
+        for device in device_list:
+            device_data = {}
+            device_data['device_id'] = device
+            tmp_device_data = df[df["device"]==device].drop("device", axis=1)
+            device_data['columns'] = list(tmp_device_data.columns.values)
+            device_data['usage_data'] = tmp_device_data.values.tolist()
+            final_json.append(device_data)
+        
+        with open(dump_file_name, mode='w+') as thisfile:
+            json.dump(final_json, thisfile)  
 
-            device_list = df['device'].unique()
-            final_json = []
-            for device in device_list:
-                device_data = {}
-                device_data['device_id'] = device
-                tmp_device_data = df[df["device"]==device].drop("device", axis=1)
-                device_data['columns'] = list(tmp_device_data.columns.values)
-                device_data['usage_data'] = tmp_device_data.values.tolist()
-                final_json.append(device_data)
-            
-            with open(dump_file_name, mode='w+') as thisfile:
-                json.dump(final_json, thisfile)  
 
-                
+    def on_experiment_end(self, trials, **info):
+        print(">>>>>>>>>>>>>>>>>>>>>> on_experiment_end")
+
 
 def env_creator(config: dict):
     """Simple wrapper that takes a config dict and returns an env instance."""
@@ -193,7 +180,7 @@ def main(**args):
         "lr": 1e-3,
         "num_sgd_iter": 10,
         "entropy_coeff": 0.0,
-        "train_batch_size": rollout_fragment_length * 34,   # ensure reproducible
+        "train_batch_size": rollout_fragment_length,   # ensure reproducible
         "rollout_fragment_length": rollout_fragment_length,
         "batch_mode": "complete_episodes",
         "observation_filter": "MeanStdFilter",
@@ -203,7 +190,7 @@ def main(**args):
     experiment = tune.run(
         args["run"],
         local_dir=args["local_dir"],
-        checkpoint_freq=1,
+        checkpoint_freq=10,
         checkpoint_at_end=True,
         checkpoint_score_attr="episode_reward_mean",
         keep_checkpoints_num=100,
