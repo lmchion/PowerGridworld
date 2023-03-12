@@ -110,7 +110,7 @@ class HSDevicesEnv(ComponentEnv):
 
     def is_terminal(self):
         """The episode is done when the end of the data is reached."""
-        return self.index == (self.episode_length - 1)
+        return self.index == self.episode_length
 
 
     def step_reward(self, **kwargs):

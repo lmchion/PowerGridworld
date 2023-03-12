@@ -54,7 +54,7 @@ class HSEVChargingEnv(ComponentEnv):
         # Create an array of simulation times in minutes, in the interval
         # (0, max_episode_steps * minutes_per_step).
         self.simulation_times = np.arange(
-            0, self.max_episode_steps * minutes_per_step, minutes_per_step)
+            0, (self.max_episode_steps+1) * minutes_per_step, minutes_per_step)
 
         # Attributes that will be initialized in reset.
         self.time_index = None  # time index
@@ -157,7 +157,7 @@ class HSEVChargingEnv(ComponentEnv):
     
     def is_terminal(self) -> bool:
         """Returns True if max episode steps have been reached."""
-        return self.time_index == self.max_episode_steps - 1
+        return self.time_index == self.max_episode_steps
     
     def step_reward(self, **kwargs) -> Tuple[float, dict]:
         """Return a non-zero reward here if you want to use RL."""
@@ -238,7 +238,7 @@ class HSEVChargingEnv(ComponentEnv):
             logger.debug(f"{i}, {energy_required_kwh}, {action}")
             
         # Update time variables.
-        self.time_index += 1
+        
         self.time = self.simulation_times[self.time_index]
         self.charging_vehicles = charging_vehicles
 
@@ -312,7 +312,7 @@ class HSEVChargingEnv(ComponentEnv):
         done = self.is_terminal()
 
         meta.update(rew_meta)
-
+        self.time_index += 1
         return obs, rew, done, meta
     
 

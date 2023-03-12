@@ -253,6 +253,6 @@ class HSEnergyStorageEnv(ComponentEnv):
     
 
     def is_terminal(self):
-        return self.simulation_step >= self.max_episode_steps
+        return self.simulation_step == self.max_episode_steps
 
     

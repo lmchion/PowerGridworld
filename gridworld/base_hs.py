@@ -122,8 +122,6 @@ class HSMultiComponentEnv(MultiComponentEnv):
         """Default step method composes the obs, reward, done, meta dictionaries
         from each component step."""
 
-        self.time_index += 1
-
         # Initialize outputs.
         real_power = 0
         obs = {}
@@ -178,7 +176,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
 
         # Compute the step reward using user-implemented method.
         step_reward, _ = self.step_reward(**self.meta_state)
-
+        self.time_index += 1
         return obs, step_reward, any(dones), self.meta_state
 
     # step reward from the base environment definition continues to apply to this env as well.

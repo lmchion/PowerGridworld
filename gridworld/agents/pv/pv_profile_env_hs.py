@@ -2,6 +2,7 @@
 
 from gridworld.agents.pv import PVEnv
 
+
 class HSPVEnv(PVEnv):
 
     def get_obs(self, **kwargs):
@@ -17,3 +18,7 @@ class HSPVEnv(PVEnv):
         """Resetting consists of simply putting the index back to 0."""
         self.index = 0
         return self.get_obs(**kwargs)
+    
+    def is_terminal(self):
+        """The episode is done when the end of the data is reached."""
+        return self.index == (self.episode_length)
