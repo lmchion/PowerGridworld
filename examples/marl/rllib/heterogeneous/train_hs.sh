@@ -6,14 +6,32 @@
 #    --node-ip-address $(ipconfig getifaddr en0)
 clear
 
+run_locally=true
 
-cp /PowerGridworld/data/inputs/env_config.json /PowerGridworld/gridworld/scenarios/data/env_config.json
-#cp ./data/inputs/env_config.json ./gridworld/scenarios/data/env_config.json
+echo "running locally" $run_locally
 
-python -u /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.py \
-#python -u ./examples/marl/rllib/heterogeneous/train_hs.py \
-    --stop-iters 1 \
-    --num-cpus 2 \
-    --num-gpus 0 \
-    --local-dir ./PowerGridworld/data/outputs/ray_results \
-    --max-episode-steps 288
+if $run_locally 
+then
+    cp ./data/inputs/env_config.json ./gridworld/scenarios/data/env_config.json
+
+    python -u ./examples/marl/rllib/heterogeneous/train_hs.py \
+        --stop-iters 100 \
+        --stop-reward -4 \
+        --num-cpus 4 \
+        --num-gpus 0 \
+        --local-dir ./data/outputs/ray_results \
+        --max-episode-steps 288
+else
+
+    cp /PowerGridworld/data/inputs/env_config.json /PowerGridworld/gridworld/scenarios/data/env_config.json
+
+    python -u /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.py \
+        --stop-iters 100 \
+        --stop-reward -4 \
+        --num-cpus 4 \
+        --num-gpus 0 \
+        --local-dir ./PowerGridworld/data/outputs/ray_results \
+        --max-episode-steps 288
+
+fi
+
