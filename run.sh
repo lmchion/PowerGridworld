@@ -43,7 +43,7 @@ sudo rm -rf data/outputs/*
 wait 20
 
 echo "building docker container"
-sudo docker build . -t homesteward:latest
+sudo docker build . -t homesteward:latest  # RUn Dockerfile
 
 
 echo "run container in a detached mode"

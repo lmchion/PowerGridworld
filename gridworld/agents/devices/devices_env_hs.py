@@ -20,6 +20,7 @@ class HSDevicesEnv(ComponentEnv):
         name: str,
         profile_csv: str,
         profile_path: str = None,
+        profile_data : dict = {},
         scaling_factor: float = 1.,
         rescale_spaces: bool = True,
         max_episode_steps: int = None,
@@ -47,15 +48,21 @@ class HSDevicesEnv(ComponentEnv):
         self.scaling_factor = scaling_factor
         self.rescale_spaces = rescale_spaces
 
-        # Read csv file.  If a full path is provide, that overrides reference to 
-        # names of csv files stored locally in the `profiles` directory.
-        profile_csv = os.path.join(PROFILE_DIR, profile_csv)
-        if profile_path is not None:
-            profile_csv = profile_path
-        self.profile_csv = profile_csv
+        if profile_data != {}:
+            data_np=np.array([ v for k,v in profile_data.items()] ).T
+            self.data_pd=pd.DataFrame(data_np, columns=profile_data.keys())
+        else:
+            # Read csv file.  If a full path is provide, that overrides reference to 
+            # names of csv files stored locally in the `profiles` directory.
+            profile_csv = os.path.join(PROFILE_DIR, profile_csv)
+            if profile_path is not None:
+                profile_csv = profile_path
+            self.profile_csv = profile_csv
+            # Read the profile data, rescale it, and infer episode length.
+            self.data_pd=pd.read_csv(self.profile_csv)
+
         
-        # Read the profile data, rescale it, and infer episode length.
-        self.data_pd=pd.read_csv(self.profile_csv)
+
         self.data = self.data_pd.values[1:, :].squeeze()
         self.data *= self.scaling_factor
         self.episode_length = len(self.data)

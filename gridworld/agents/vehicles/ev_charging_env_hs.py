@@ -5,6 +5,7 @@ from typing import Tuple
 import gym
 import numpy as np
 import pandas as pd
+import json
 
 from gridworld import ComponentEnv
 from gridworld.log import logger
@@ -29,6 +30,7 @@ class HSEVChargingEnv(ComponentEnv):
         vehicle_multiplier: int = 1,
         rescale_spaces: bool = True,
         max_charge_cost: float = 0.55,
+        profile_data : dict = {},
         **kwargs
     ):
         super().__init__(name=name)
@@ -63,9 +65,12 @@ class HSEVChargingEnv(ComponentEnv):
         self.charging_vehicles = None  # charging vehicle list
         self.departed_vehicles = None  # vehicle list departed in last time step
 
+        if profile_data != {}:
+            self._df=pd.read_json(json.dumps(profile_data), orient='split')
         # Read the source dataframe.
-        vehicle_csv = vehicle_csv if vehicle_csv else os.path.join(THIS_DIR, "vehicles_hs.csv")
-        self._df = pd.read_csv(vehicle_csv)     # all vehicles
+        else: 
+            vehicle_csv = vehicle_csv if vehicle_csv else os.path.join(THIS_DIR, "vehicles_hs.csv")
+            self._df = pd.read_csv(vehicle_csv)     # all vehicles
         self._df["energy_required_kwh"] *= self.vehicle_multiplier
 
         # Round the start/end times to the nearest step.

@@ -45,16 +45,11 @@ def make_env_config():
     with open(os.path.join(THIS_DIR, "data/env_config.json"), 'r') as f:
         env_config = json.load(f)
 
-    timestamps, grid_cost = load_grid_cost(env_config['start_time'], env_config['end_time'])
-    
-    env_config['grid_cost'] = grid_cost
-    env_config['timestamps'] = timestamps
 
     for elem in env_config['components']:
         elem['cls']= getattr(sys.modules[__name__], elem['cls'])
 
-    env_config['control_timedelta']  =  pd.Timedelta(env_config['control_timedelta'], env_config['control_time_delta_units'])
-    del env_config['control_time_delta_units']
+    env_config['control_timedelta']  =  pd.Timedelta(env_config['control_timedelta'])
 
     return env_config
 

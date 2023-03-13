@@ -132,3 +132,5 @@ dmypy.json
 
 examples/marl/rllib/heterogeneous/ray_results/*
 data/*
+PowerGridworld/data/outputs/*
+
