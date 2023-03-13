@@ -61,6 +61,7 @@ class HSDataLoggerCallback(LoggerCallback):
         os.makedirs(self._trial_local_dir[trial], exist_ok=True)
 
     def log_trial_result(self, iteration, trial, result):
+        print("dumping the result in json..")
         episode_media = result["episode_media"]
         if "episode_data" not in episode_media:
             return
@@ -108,8 +109,103 @@ class HSDataLoggerCallback(LoggerCallback):
 
 
     def on_experiment_end(self, trials, **info):
-        print(">>>>>>>>>>>>>>>>>>>>>> on_experiment_end")
+        print("on_experiment_end dumping the last result for validation..")
+        result = trials[0].last_result
+        logdir = trials[0].logdir
+        episode_media = result["episode_media"]
+        if "episode_data" not in episode_media:
+            return
 
+        data = episode_media["episode_data"]            
+
+        episode_data = data[-1]
+
+        extract_columns = ["device", 
+                            "timestamp", 
+                            "cost", 
+                            "reward",
+                            "action", 
+                            "pv_power", 
+                            "es_power", 
+                            "grid_power",
+                            "grid_cost",
+                            "es_cost",
+                            "hvac_power",
+                            "other_power",
+                            "device_custom_info"]
+        
+        csv_columns = [     "timestamp",
+                            "grid_cost",
+                           "es_dev_action",
+                           "ev_dev_action",
+                            "oth_dev_action",
+                            "ev_consumed_pv_power", 
+                            "ev_consumed_es_power", 
+                            "ev_consumed_grid_power",
+                            "oth_dev_consumed_pv_power", 
+                            "oth_dev_consumed_es_power", 
+                            "oth_dev_consumed_grid_power",
+                            "es_consumed_pv_power", 
+                            "es_consumed_grid_power",
+                            "ev_cost", 
+                            "ev_reward",
+                            "oth_dev_cost", 
+                            "oth_dev_reward",
+                            "es_cost", 
+                            "es_reward",
+                            "ev_power_unserved",
+                            "es_current_storage",
+                            "es_current_psudo_cost"]
+
+        if not episode_data:
+            logger.info("Episode data tranche is empty while logging. skipping.")
+        
+        df = pd.DataFrame(episode_data, columns=extract_columns)
+
+        timestamps = df['timestamp'].unique()
+        final_csv_rows = []
+        for t_stp in timestamps:
+            timestamp_data = {}
+            timestamp_data['timestamp'] = t_stp
+
+            tmp_timestamp_data = df[df["timestamp"]==t_stp].drop("timestamp", axis=1)
+            
+            timestamp_data["timestamp"] = t_stp
+            
+            for i in tmp_timestamp_data.itertuples():
+                if i.device == 'storage':
+                    timestamp_data["grid_cost"] = i.grid_cost
+                    timestamp_data["es_cost"] = i.cost
+                    timestamp_data["es_reward"] = i.reward
+                    timestamp_data["es_dev_action"] = i.action
+                    timestamp_data["es_current_storage"] = i.device_custom_info["current_storage"]
+                    timestamp_data["es_current_psudo_cost"] = i.device_custom_info["current_cost"]
+                    timestamp_data["es_consumed_pv_power"] = i.pv_power
+                    timestamp_data["es_consumed_grid_power"] = i.grid_power
+                elif i.device == 'ev-charging':
+                    timestamp_data["ev_cost"] = i.cost
+                    timestamp_data["ev_reward"] = i.reward
+                    timestamp_data["ev_dev_action"] = i.action
+                    timestamp_data["ev_power_unserved"] = i.device_custom_info["power_unserved"]
+                    timestamp_data["ev_consumed_es_power"] = i.es_power
+                    timestamp_data["ev_consumed_pv_power"] = i.pv_power
+                    timestamp_data["ev_consumed_grid_power"] = i.grid_power
+                elif i.device == 'other-devices':
+                    timestamp_data["oth_dev_cost"] = i.cost
+                    timestamp_data["oth_dev_reward"] = i.reward
+                    timestamp_data["oth_dev_action"] = i.action
+                    timestamp_data["oth_dev_consumed_es_power"] = i.es_power
+                    timestamp_data["oth_dev_consumed_pv_power"] = i.pv_power
+                    timestamp_data["oth_dev_consumed_grid_power"] = i.grid_power
+
+
+            final_csv_rows.append(timestamp_data)
+        
+        dump_file_name = osp.join(logdir, "final_validation.csv")
+
+        final_df = pd.DataFrame(final_csv_rows)
+        final_df.to_csv(dump_file_name, sep=',', encoding='utf-8')
+        
 
 def env_creator(config: dict):
     """Simple wrapper that takes a config dict and returns an env instance."""
