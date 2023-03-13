@@ -117,7 +117,7 @@ class HSDevicesEnv(ComponentEnv):
 
     def is_terminal(self):
         """The episode is done when the end of the data is reached."""
-        return self.index == (self.episode_length - 1)
+        return self.index == self.episode_length
 
 
     def step_reward(self, **kwargs):
@@ -131,6 +131,7 @@ class HSDevicesEnv(ComponentEnv):
         step_meta["device_id"] = self.name
         step_meta["timestamp"] = kwargs['timestamp']
         step_meta["cost"] = step_cost
+        step_meta["reward"] = reward
         return reward, {"step_meta": step_meta}
 
 
@@ -190,6 +191,8 @@ class HSDevicesEnv(ComponentEnv):
         rewmeta['step_meta']['pv_power'] = kwargs['pv_power']
         rewmeta['step_meta']['es_power'] = kwargs['es_power']
         rewmeta['step_meta']['grid_power'] = kwargs['grid_power']
+        rewmeta['step_meta']['device_custom_info'] = {'devices_power_demand': sum_obs_meta}
+
 
         obs_meta.update(rewmeta)
         self.index += 1

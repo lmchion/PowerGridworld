@@ -56,7 +56,7 @@ class HSEVChargingEnv(ComponentEnv):
         # Create an array of simulation times in minutes, in the interval
         # (0, max_episode_steps * minutes_per_step).
         self.simulation_times = np.arange(
-            0, self.max_episode_steps * minutes_per_step, minutes_per_step)
+            0, (self.max_episode_steps+1) * minutes_per_step, minutes_per_step)
 
         # Attributes that will be initialized in reset.
         self.time_index = None  # time index
@@ -156,13 +156,13 @@ class HSEVChargingEnv(ComponentEnv):
             obs = raw_obs
 
         meta=self.state.copy()        
-        meta.update(kwargs)
+        kwargs.update(meta)
 
-        return obs.copy(), meta
+        return obs.copy(), kwargs
     
     def is_terminal(self) -> bool:
         """Returns True if max episode steps have been reached."""
-        return self.time_index == self.max_episode_steps - 1
+        return self.time_index == self.max_episode_steps
     
     def step_reward(self, **kwargs) -> Tuple[float, dict]:
         """Return a non-zero reward here if you want to use RL."""
@@ -176,6 +176,7 @@ class HSEVChargingEnv(ComponentEnv):
         step_meta["device_id"] = self.name
         step_meta["timestamp"] = kwargs['timestamp']
         step_meta["cost"] = step_cost
+        step_meta["reward"] = reward
         return reward, {"step_meta": step_meta}
    
     def step(self, action: np.ndarray = None, **kwargs) -> Tuple[np.ndarray, float, bool, dict]:
@@ -242,7 +243,7 @@ class HSEVChargingEnv(ComponentEnv):
             logger.debug(f"{i}, {energy_required_kwh}, {action}")
             
         # Update time variables.
-        self.time_index += 1
+        
         self.time = self.simulation_times[self.time_index]
         self.charging_vehicles = charging_vehicles
 
@@ -283,10 +284,20 @@ class HSEVChargingEnv(ComponentEnv):
             grid_capacity=kwargs['grid_power']
 
             solar_power=min(power,solar_capacity)
-            battery_power = min( battery_capacity, power - solar_power ) 
-            grid_power=min( grid_capacity, power - solar_power - battery_power )
 
-            self.current_cost = (solar_cost*solar_power + grid_cost*grid_power + battery_cost*battery_power ) / (solar_power+ grid_power+battery_power)
+            # if we want to consider the battery cost and conserve it for when 
+            # grid is more expensive than battery, this below check is required.
+            # but then the battery cost in the current_cost calculation can be ignored.
+            if battery_cost < grid_cost:
+                battery_power = min( battery_capacity, power - solar_power ) 
+                grid_power=min( grid_capacity, power - solar_power - battery_power )
+            elif battery_cost >= grid_cost:
+                grid_power=min( grid_capacity, power - solar_power)
+                battery_power = min( battery_capacity, power - solar_power - grid_power ) 
+
+            # ignore battery cost here since it has already been counted when the battery was charged.
+            if solar_power+grid_power != 0:
+                self.current_cost = (solar_cost*solar_power + grid_cost*grid_power) / (solar_power+ grid_power)
 
             kwargs['pv_power']=max(0.0, solar_capacity-solar_power)
             kwargs['es_power']=max(0.0, battery_capacity-battery_power)
@@ -301,11 +312,12 @@ class HSEVChargingEnv(ComponentEnv):
         rew_meta['step_meta']['pv_power'] = kwargs['pv_power']
         rew_meta['step_meta']['es_power'] = kwargs['es_power']
         rew_meta['step_meta']['grid_power'] = kwargs['grid_power']
+        rew_meta['step_meta']['device_custom_info'] = {'power_unserved': unserved}
 
         done = self.is_terminal()
 
         meta.update(rew_meta)
-
+        self.time_index += 1
         return obs, rew, done, meta
     
 

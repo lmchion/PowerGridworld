@@ -167,6 +167,7 @@ class HSEnergyStorageEnv(ComponentEnv):
         step_meta['device_id'] = self.name
         step_meta["timestamp"] = kwargs['timestamp']
         step_meta["cost"] = step_cost
+        step_meta["reward"] = reward
         return reward, {"step_meta": step_meta}
 
      
@@ -239,6 +240,7 @@ class HSEnergyStorageEnv(ComponentEnv):
         rew_meta['step_meta']['pv_power'] = kwargs['pv_power']
         rew_meta['step_meta']['es_power'] = kwargs['es_power']
         rew_meta['step_meta']['grid_power'] = kwargs['grid_power']
+        rew_meta['step_meta']['device_custom_info'] = {'current_storage': self.current_storage, 'current_cost': self.current_cost}
 
         if power > 0.0: # discharging for setting the pv and grid power to 0.
             rew_meta['step_meta']['pv_power'] = 0.0
@@ -251,6 +253,6 @@ class HSEnergyStorageEnv(ComponentEnv):
     
 
     def is_terminal(self):
-        return self.simulation_step >= self.max_episode_steps
+        return self.simulation_step == self.max_episode_steps
 
     

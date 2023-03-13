@@ -3,7 +3,6 @@ cluster see, e.g., https://docs.ray.io/en/latest/cluster/deploy.html."""
 import json
 import os
 import os.path as osp
-import threading
 
 import numpy as np
 import pandas as pd
@@ -28,15 +27,28 @@ class HSAgentTrainingCallback(DefaultCallbacks):
         self, *, worker, base_env, episode, env_index, **kwargs
     ):
         # TODO change this in subcomponents to use the component name to remove hard-coding.
-        step_meta = episode.last_info_for().get('step_meta', None)
-        for step_meta_item in step_meta:
-            episode.media["episode_data"].append([step_meta_item["device_id"], step_meta_item["timestamp"], step_meta_item["cost"], step_meta_item["action"], step_meta_item["pv_power"], step_meta_item["es_power"], step_meta_item["grid_power"]])
-        #episode.media["episode_data"]['es_step_cost'].append(episode.last_info_for().get('es_step_cost', None))
 
-    def on_episode_end(
-        self, *, worker, base_env, policies, episode, env_index, **kwargs
-    ):
-        episode_data = episode.media["episode_data"]
+        ep_lastinfo = episode.last_info_for()
+        step_meta = ep_lastinfo.get('step_meta', None)
+        grid_cost = ep_lastinfo.get('grid_cost', None)
+        es_cost = ep_lastinfo.get('es_cost', None)
+        hvac_power = ep_lastinfo.get('hvac_power', None)
+        other_power = ep_lastinfo.get('other_power', None)
+        
+        for step_meta_item in step_meta:
+            episode.media["episode_data"].append([step_meta_item["device_id"], 
+                                                  step_meta_item["timestamp"], 
+                                                  step_meta_item["cost"], 
+                                                  step_meta_item["reward"],
+                                                  step_meta_item["action"], 
+                                                  step_meta_item["pv_power"], 
+                                                  step_meta_item["es_power"], 
+                                                  step_meta_item["grid_power"],
+                                                  grid_cost,
+                                                  es_cost,
+                                                  hvac_power,
+                                                  other_power,
+                                                  step_meta_item["device_custom_info"]])
 
 class HSDataLoggerCallback(LoggerCallback):
     def __init__(self):
@@ -49,49 +61,139 @@ class HSDataLoggerCallback(LoggerCallback):
         os.makedirs(self._trial_local_dir[trial], exist_ok=True)
 
     def log_trial_result(self, iteration, trial, result):
-        file_lock = threading.Lock()
 
-        with file_lock:
-            episode_media = result["episode_media"]
-            if "episode_data" not in episode_media:
-                return
+        episode_media = result["episode_media"]
+        if "episode_data" not in episode_media:
+            return
 
-            step = result['timesteps_total']
-            dump_file_name = osp.join(
-                self._trial_local_dir[trial], f"data-{step:08d}.json"
-            )
+        junk1 = osp.join(trial.logdir, "progress.csv")
+        junk2 = osp.join(trial.logdir, "result.json")
+        if os.path.exists(junk1):
+            os.remove(junk1)
+        if os.path.exists(junk2):
+            os.remove(junk2)
 
-            num_episodes = result["episodes_this_iter"]
-            data = episode_media["episode_data"]            
 
-            episode_data = data[-num_episodes:]
+        step = result['timesteps_total']
+        dump_file_name = osp.join(
+            self._trial_local_dir[trial], f"data-{step:08d}.json"
+        )
 
-            extract_columns = ["device", "timestamp", "cost", "action", "pv_power", "es_power", "grid_power"]
-            #logger.info("Trial Result dumping to", dump_file_name)
-            df = pd.DataFrame(np.array([]).reshape((-1, len(extract_columns))), columns = extract_columns)
-            for tranche in episode_data:
-                if not tranche:
-                    logger.info("Episode data tranche is empty while logging. skipping.")
-                    continue
-                
-                tmp_df = pd.DataFrame(tranche, columns=extract_columns)
+        data = episode_media["episode_data"]            
 
-                df = df.append(tmp_df)
+        episode_data = data[-1]
 
-            device_list = df['device'].unique()
-            final_json = []
-            for device in device_list:
-                device_data = {}
-                device_data['device_id'] = device
-                tmp_device_data = df[df["device"]==device].drop("device", axis=1)
-                device_data['columns'] = list(tmp_device_data.columns.values)
-                device_data['usage_data'] = tmp_device_data.values.tolist()
-                final_json.append(device_data)
+        extract_columns = ["device", 
+                            "timestamp", 
+                            "cost", 
+                            "reward",
+                            "action", 
+                            "pv_power", 
+                            "es_power", 
+                            "grid_power",
+                            "grid_cost",
+                            "es_cost",
+                            "hvac_power",
+                            "other_power",
+                            "device_custom_info"]
+
+        if not episode_data:
+            logger.info("Episode data tranche is empty while logging. skipping.")
+        
+        df = pd.DataFrame(episode_data, columns=extract_columns)
+
+        device_list = df['device'].unique()
+        final_json = []
+        for device in device_list:
+            device_data = {}
+            device_data['device_id'] = device
+            tmp_device_data = df[df["device"]==device].drop("device", axis=1)
+            device_data['columns'] = list(tmp_device_data.columns.values)
+            device_data['usage_data'] = tmp_device_data.values.tolist()
+            final_json.append(device_data)
+        
+        with open(dump_file_name, mode='w+') as thisfile:
+            json.dump(final_json, thisfile)  
+
+
+    def on_experiment_end(self, trials, **info):
+        print("on_experiment_end dumping the last result for validation..")
+        result = trials[0].last_result
+        logdir = trials[0].logdir
+        episode_media = result["episode_media"]
+        if "episode_data" not in episode_media:
+            return
+
+        data = episode_media["episode_data"]            
+
+        episode_data = data[-1]
+
+        extract_columns = ["device", 
+                            "timestamp", 
+                            "cost", 
+                            "reward",
+                            "action", 
+                            "pv_power", 
+                            "es_power", 
+                            "grid_power",
+                            "grid_cost",
+                            "es_cost",
+                            "hvac_power",
+                            "other_power",
+                            "device_custom_info"]
+
+        if not episode_data:
+            logger.info("Episode data tranche is empty while logging. skipping.")
+        
+        df = pd.DataFrame(episode_data, columns=extract_columns)
+
+        timestamps = df['timestamp'].unique()
+        final_csv_rows = []
+        for t_stp in timestamps:
+            timestamp_data = {}
+            timestamp_data['timestamp'] = t_stp
+
+            tmp_timestamp_data = df[df["timestamp"]==t_stp].drop("timestamp", axis=1)
             
-            with open(dump_file_name, mode='w+') as thisfile:
-                json.dump(final_json, thisfile)  
+            timestamp_data["timestamp"] = t_stp
+            
+            for i in tmp_timestamp_data.itertuples():
+                if i.device == 'storage':
+                    timestamp_data["grid_cost"] = i.grid_cost
+                    timestamp_data["es_cost"] = i.cost
+                    timestamp_data["es_reward"] = i.reward
+                    timestamp_data["es_dev_action"] = i.action
+                    timestamp_data["es_current_storage"] = i.device_custom_info["current_storage"]
+                    timestamp_data["es_current_psudo_cost"] = i.device_custom_info["current_cost"]
+                    timestamp_data["es_consumed_pv_power"] = i.pv_power
+                    timestamp_data["es_consumed_grid_power"] = i.grid_power
+                elif i.device == 'ev-charging':
+                    timestamp_data["ev_cost"] = i.cost
+                    timestamp_data["ev_reward"] = i.reward
+                    timestamp_data["ev_dev_action"] = i.action
+                    timestamp_data["ev_power_unserved"] = i.device_custom_info["power_unserved"]
+                    timestamp_data["ev_consumed_es_power"] = i.es_power
+                    timestamp_data["ev_consumed_pv_power"] = i.pv_power
+                    timestamp_data["ev_consumed_grid_power"] = i.grid_power
+                elif i.device == 'other-devices':
+                    timestamp_data["oth_dev_cost"] = i.cost
+                    timestamp_data["oth_dev_reward"] = i.reward
+                    timestamp_data["oth_dev_action"] = i.action
+                    timestamp_data["oth_dev_consumed_es_power"] = i.es_power
+                    timestamp_data["oth_dev_consumed_pv_power"] = i.pv_power
+                    timestamp_data["oth_dev_consumed_grid_power"] = i.grid_power
+                elif i.device == 'pv':
+                    timestamp_data["pv_action"] = i.action
+                    timestamp_data["pv_power"] = i.pv_power
 
-                
+
+            final_csv_rows.append(timestamp_data)
+        
+        dump_file_name = osp.join(logdir, "final_validation.csv")
+
+        final_df = pd.DataFrame(final_csv_rows)
+        final_df.to_csv(dump_file_name, sep=',', encoding='utf-8')
+        
 
 def env_creator(config: dict):
     """Simple wrapper that takes a config dict and returns an env instance."""
@@ -162,7 +264,7 @@ def main(**args):
         "lr": 1e-3,
         "num_sgd_iter": 10,
         "entropy_coeff": 0.0,
-        "train_batch_size": rollout_fragment_length * 34,   # ensure reproducible
+        "train_batch_size": rollout_fragment_length,   # ensure reproducible
         "rollout_fragment_length": rollout_fragment_length,
         "batch_mode": "complete_episodes",
         "observation_filter": "MeanStdFilter",
@@ -172,7 +274,7 @@ def main(**args):
     experiment = tune.run(
         args["run"],
         local_dir=args["local_dir"],
-        checkpoint_freq=1,
+        checkpoint_freq=100,
         checkpoint_at_end=True,
         checkpoint_score_attr="episode_reward_mean",
         keep_checkpoints_num=100,
