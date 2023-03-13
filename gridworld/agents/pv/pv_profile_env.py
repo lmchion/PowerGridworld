@@ -1,14 +1,12 @@
 import os
 
+import gym
 import numpy as np
 import pandas as pd
 
-import gym
-
-from gridworld.log import logger
 from gridworld import ComponentEnv
+from gridworld.log import logger
 from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
-
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 PROFILE_DIR = os.path.join(THIS_DIR, "profiles")
@@ -108,6 +106,7 @@ class PVEnv(ComponentEnv):
         if self.grid_aware:
             raw_obs = raw_obs + [kwargs["min_voltage"]]
         raw_obs = np.array(raw_obs)
+
         if self.rescale_spaces:
             obs = to_scaled(raw_obs, self._observation_space.low, self._observation_space.high)
         else:

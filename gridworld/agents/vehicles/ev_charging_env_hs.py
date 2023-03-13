@@ -151,9 +151,9 @@ class HSEVChargingEnv(ComponentEnv):
             obs = raw_obs
 
         meta=self.state.copy()        
-        meta.update(kwargs)
+        kwargs.update(meta)
 
-        return obs.copy(), meta
+        return obs.copy(), kwargs
     
     def is_terminal(self) -> bool:
         """Returns True if max episode steps have been reached."""

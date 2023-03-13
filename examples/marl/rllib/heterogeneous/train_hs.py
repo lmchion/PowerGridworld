@@ -61,10 +61,18 @@ class HSDataLoggerCallback(LoggerCallback):
         os.makedirs(self._trial_local_dir[trial], exist_ok=True)
 
     def log_trial_result(self, iteration, trial, result):
-        print("dumping the result in json..")
+
         episode_media = result["episode_media"]
         if "episode_data" not in episode_media:
             return
+
+        junk1 = osp.join(trial.logdir, "progress.csv")
+        junk2 = osp.join(trial.logdir, "result.json")
+        if os.path.exists(junk1):
+            os.remove(junk1)
+        if os.path.exists(junk2):
+            os.remove(junk2)
+
 
         step = result['timesteps_total']
         dump_file_name = osp.join(
@@ -133,29 +141,6 @@ class HSDataLoggerCallback(LoggerCallback):
                             "hvac_power",
                             "other_power",
                             "device_custom_info"]
-        
-        csv_columns = [     "timestamp",
-                            "grid_cost",
-                           "es_dev_action",
-                           "ev_dev_action",
-                            "oth_dev_action",
-                            "ev_consumed_pv_power", 
-                            "ev_consumed_es_power", 
-                            "ev_consumed_grid_power",
-                            "oth_dev_consumed_pv_power", 
-                            "oth_dev_consumed_es_power", 
-                            "oth_dev_consumed_grid_power",
-                            "es_consumed_pv_power", 
-                            "es_consumed_grid_power",
-                            "ev_cost", 
-                            "ev_reward",
-                            "oth_dev_cost", 
-                            "oth_dev_reward",
-                            "es_cost", 
-                            "es_reward",
-                            "ev_power_unserved",
-                            "es_current_storage",
-                            "es_current_psudo_cost"]
 
         if not episode_data:
             logger.info("Episode data tranche is empty while logging. skipping.")
@@ -197,6 +182,9 @@ class HSDataLoggerCallback(LoggerCallback):
                     timestamp_data["oth_dev_consumed_es_power"] = i.es_power
                     timestamp_data["oth_dev_consumed_pv_power"] = i.pv_power
                     timestamp_data["oth_dev_consumed_grid_power"] = i.grid_power
+                elif i.device == 'pv':
+                    timestamp_data["pv_action"] = i.action
+                    timestamp_data["pv_power"] = i.pv_power
 
 
             final_csv_rows.append(timestamp_data)
@@ -286,7 +274,7 @@ def main(**args):
     experiment = tune.run(
         args["run"],
         local_dir=args["local_dir"],
-        checkpoint_freq=10,
+        checkpoint_freq=100,
         checkpoint_at_end=True,
         checkpoint_score_attr="episode_reward_mean",
         keep_checkpoints_num=100,
