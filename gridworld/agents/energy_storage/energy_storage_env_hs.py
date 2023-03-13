@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 import numpy as np
 import pandas as pd
 from scipy.stats import truncnorm
@@ -72,7 +72,7 @@ class HSEnergyStorageEnv(ComponentEnv):
         self.action_space = maybe_rescale_box_space(
             self._action_space, rescale=self.rescale_spaces)
 
-    def reset(self, **kwargs):
+    def reset(self, *, seed=None, options=None, **kwargs):
 
         #super().reset(**kwargs)
         
@@ -249,7 +249,7 @@ class HSEnergyStorageEnv(ComponentEnv):
         obs_meta.update(rew_meta)
         self.simulation_step += 1
 
-        return obs, rew, self.is_terminal(), obs_meta
+        return obs, rew, self.is_terminal(), False, obs_meta
     
 
     def is_terminal(self):

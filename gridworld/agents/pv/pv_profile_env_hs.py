@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 
-import gym
+import gymnasium as gym
 
 from gridworld.log import logger
 from gridworld import ComponentEnv
@@ -119,7 +119,7 @@ class HSPVEnv(ComponentEnv):
         
         return obs,meta
     
-    def reset(self, **kwargs):
+    def reset(self, *, seed=None, options=None, **kwargs):
         """Resetting consists of simply putting the index back to 0."""
         self.index = 0
         return self.get_obs(**kwargs)
@@ -147,7 +147,7 @@ class HSPVEnv(ComponentEnv):
         rew_meta['step_meta']['grid_power'] = 0
         rew_meta['step_meta']['device_custom_info'] = {'pv_actionable_power': self._real_power}
         obs_meta.update(rew_meta)
-        return obs, rew, self.is_terminal(), obs_meta
+        return obs, rew, self.is_terminal(), False, obs_meta
 
     def step_reward(self, **kwargs):
         step_meta = {}

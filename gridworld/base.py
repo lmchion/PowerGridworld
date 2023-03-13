@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Dict, List, Tuple
 
-import gym
+import gymnasium as gym
 import numpy as np
 
 from gridworld.log import logger
@@ -26,7 +26,7 @@ class ComponentEnv(gym.Env, ABC):
 
 
     @abstractmethod
-    def reset(self, **kwargs) -> Tuple[np.ndarray, dict]:
+    def reset(self, *, seed=None, options=None, **kwargs) -> Tuple[np.ndarray, dict]:
         """Standard gym reset method but with kwargs."""
         return
 
@@ -105,7 +105,7 @@ class MultiComponentEnv(ComponentEnv):
         self._obs_labels = list(set(obs_labels))
 
 
-    def reset(self, **kwargs) -> dict:
+    def reset(self, *, seed=None, options=None, **kwargs) -> dict:
         """Default reset method resets each component and returns the obs dict."""
         _ = [e.reset(**kwargs) for e in self.envs]
         return self.get_obs(**kwargs)
@@ -136,7 +136,7 @@ class MultiComponentEnv(ComponentEnv):
         # Compute the step reward using user-implemented method.
         step_reward, _ = self.step_reward()
         
-        return obs, step_reward, any(dones), metas
+        return obs, step_reward, any(dones), False, metas
 
 
     def step_reward(self) -> Tuple[float, dict]:

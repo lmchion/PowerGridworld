@@ -8,9 +8,14 @@ import numpy as np
 import pandas as pd
 import ray
 from ray import tune
-from ray.rllib.agents.callbacks import DefaultCallbacks
+#from ray.rllib.agents.callbacks import DefaultCallbacks
+from ray.rllib.algorithms.callbacks import DefaultCallbacks
+from ray.rllib.evaluation import Episode, RolloutWorker
+from ray.rllib.env import BaseEnv
+from ray.rllib.policy import Policy
 from ray.tune.logger import LoggerCallback
 from ray.tune.registry import register_env
+from typing import Dict, Tuple
 
 from gridworld.log import logger
 from gridworld.scenarios.heterogeneous_hs import make_env_config
@@ -18,17 +23,20 @@ from gridworld.scenarios.heterogeneous_hs import make_env_config
 
 class HSAgentTrainingCallback(DefaultCallbacks):
     def on_episode_start(
-        self, *, worker, base_env, policies, episode, env_index, **kwargs
+        self, *, worker : RolloutWorker, base_env : BaseEnv, 
+        policies: Dict[str, Policy], episode : Episode , env_index : int, **kwargs
     ):
         #episode.user_data["episode_data"] = defaultdict(list)
         episode.media["episode_data"] = []
 
     def on_episode_step(
-        self, *, worker, base_env, episode, env_index, **kwargs
+        self, *, worker : RolloutWorker, base_env : BaseEnv, episode : Episode , env_index : int, **kwargs
     ):
         # TODO change this in subcomponents to use the component name to remove hard-coding.
-
+        #print(dir(episode))
         ep_lastinfo = episode.last_info_for()
+
+
         step_meta = ep_lastinfo.get('step_meta', None)
         grid_cost = ep_lastinfo.get('grid_cost', None)
         es_cost = ep_lastinfo.get('es_cost', None)
@@ -265,7 +273,8 @@ def main(**args):
         "num_sgd_iter": 10,
         "entropy_coeff": 0.0,
         "train_batch_size": rollout_fragment_length,   # ensure reproducible
-        "rollout_fragment_length": rollout_fragment_length,
+        #"rollout_fragment_length": rollout_fragment_length,
+        "rollout_fragment_length": 'auto',
         "batch_mode": "complete_episodes",
         "observation_filter": "MeanStdFilter",
     }
@@ -279,13 +288,13 @@ def main(**args):
         checkpoint_score_attr="episode_reward_mean",
         keep_checkpoints_num=100,
         stop=stop,
-        callbacks=[HSDataLoggerCallback()],
+       # callbacks=[HSDataLoggerCallback()],
         config={
             "env": env_name,
             "env_config": env_config,
             "num_gpus": args["num_gpus"],
             "num_workers": num_workers,
-            "callbacks": HSAgentTrainingCallback,
+        #    "callbacks": HSAgentTrainingCallback,
             # "multiagent": {
             #     "policies": {
             #         agent_id: (None, obs_space[agent_id], act_space[agent_id], {}) 

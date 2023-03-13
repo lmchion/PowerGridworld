@@ -2,7 +2,7 @@ import os
 from collections import OrderedDict
 from typing import Tuple
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pandas as pd
 import json
@@ -122,7 +122,7 @@ class HSEVChargingEnv(ComponentEnv):
         self._obs_labels = list(self.state.keys())
 
 
-    def reset(self, **kwargs) -> Tuple[dict, dict]:
+    def reset(self, *, seed=None, options=None, **kwargs) -> Tuple[dict, dict]:
        
         self.time_index = 0 
         self.time = self.simulation_times[self.time_index]
@@ -318,7 +318,7 @@ class HSEVChargingEnv(ComponentEnv):
 
         meta.update(rew_meta)
         self.time_index += 1
-        return obs, rew, done, meta
+        return obs, rew, done, False, meta
     
 
     def _update(self, key, value):

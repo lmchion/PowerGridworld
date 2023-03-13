@@ -5,7 +5,7 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 
-import gym
+import gymnasium as gym
 
 from gridworld.log import logger
 from gridworld import ComponentEnv
@@ -142,7 +142,7 @@ class EVChargingEnv(ComponentEnv):
         return reward, {"real_power_unserved": unserved_reward, "peak_reward": peak_reward}
 
 
-    def reset(self, **kwargs) -> Tuple[dict, dict]:
+    def reset(self, *, seed=None, options=None, **kwargs) -> Tuple[dict, dict]:
         """Reset the initial conditions and run a single step of the simulation
         so that `get_obs` here can be used in the first control step."""
 
@@ -261,7 +261,7 @@ class EVChargingEnv(ComponentEnv):
 
         meta.update(rew_meta)
 
-        return obs, rew, done, meta
+        return obs, rew, done, False,  meta
 
     
     def _update(self, key, value):

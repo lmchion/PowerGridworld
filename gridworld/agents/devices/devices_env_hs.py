@@ -1,6 +1,6 @@
 import os
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pandas as pd
 
@@ -136,7 +136,7 @@ class HSDevicesEnv(ComponentEnv):
 
 
 
-    def reset(self, **kwargs):
+    def reset(self, *, seed=None, options=None, **kwargs):
         """Resetting consists of simply putting the index back to 0."""
         self.index = 0
         return self.get_obs(**kwargs)
@@ -197,4 +197,4 @@ class HSDevicesEnv(ComponentEnv):
         obs_meta.update(rewmeta)
         self.index += 1
 
-        return obs, rew, self.is_terminal(), obs_meta
+        return obs, rew, self.is_terminal(), False, obs_meta

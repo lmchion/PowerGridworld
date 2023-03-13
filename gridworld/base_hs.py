@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from typing import Dict, List, Tuple
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pandas as pd
 
@@ -68,7 +68,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
 
         # Action spaces from the component envs are combined into the composite space in super.__init__
 
-    def reset(self, **kwargs) -> Tuple[dict, dict]:
+    def reset(self, *, seed=None, options=None, **kwargs ) -> Tuple[dict, dict]:
         self.time_index = 0
         self.meta_state['timestamp']= self._timestamps[self.time_index] #self._grid_cost_data['timestamp'].tolist()[self.time_index]
         self.meta_state['grid_cost']= self._grid_cost_data[self.time_index] #self._grid_cost_data['grid_cost'].tolist()[self.time_index]
@@ -90,7 +90,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         #_ = [e.reset(**kwargs) for e in self.envs]
         obs, meta = self.get_obs(**kwargs)
 
-        return obs
+        return obs, meta
 
     def get_obs(self, **kwargs) -> Tuple[dict, dict]:
         """
@@ -136,7 +136,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
             subcomp_kwargs = {k: v for k,
                               v in kwargs.items() if k in subcomp._obs_labels}
             subcomp_kwargs.update(self.meta_state)
-            subcomp_obs, _, subcomp_done, subcomp_meta = subcomp.step(
+            subcomp_obs, _, subcomp_done, flag, subcomp_meta = subcomp.step(
                 action[subcomp.name], **subcomp_kwargs)
             obs[subcomp.name] = subcomp_obs.copy()
             dones.append(subcomp_done)
@@ -177,7 +177,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         # Compute the step reward using user-implemented method.
         step_reward, _ = self.step_reward(**self.meta_state)
         self.time_index += 1
-        return obs, step_reward, any(dones), self.meta_state
+        return obs, step_reward, any(dones), False, self.meta_state
 
     # step reward from the base environment definition continues to apply to this env as well.
 

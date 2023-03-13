@@ -4,7 +4,7 @@ import pandas as pd
 
 from tests.distribution_system.conftest import opendss_config
 
-import gym
+import gymnasium as gym
 
 from gridworld.agents.buildings import FiveZoneROMThermalEnergyEnv
 from gridworld.agents.pv import PVEnv

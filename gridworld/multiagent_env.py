@@ -209,7 +209,7 @@ class MultiAgentEnv(Env):
         rew = self.reward_transform(rew)
         meta = self.meta_transform(meta)
 
-        return obs, rew, dones, meta
+        return obs, rew, dones, False,  meta
 
 
     def reward_transform(self, rew_dict) -> dict:

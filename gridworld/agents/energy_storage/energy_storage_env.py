@@ -3,7 +3,7 @@ import pandas as pd
 
 from scipy.stats import truncnorm
 
-import gym
+import gymnasium as gym
 
 from gridworld import ComponentEnv
 from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
@@ -72,7 +72,7 @@ class EnergyStorageEnv(ComponentEnv):
             self._action_space, rescale=self.rescale_spaces)
 
 
-    def reset(self, **kwargs):
+    def reset(self, *, seed=None, options=None, **kwargs):
         """ Reset the battery storage at the beginning of an episode.
         """
 
@@ -157,7 +157,7 @@ class EnergyStorageEnv(ComponentEnv):
 
         self.simulation_step += 1
 
-        return obs, rew, self.is_terminal(), obs_meta
+        return obs, rew, self.is_terminal(), False, obs_meta
 
     def step_reward(self):
 
