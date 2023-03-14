@@ -15,7 +15,7 @@ then
     cp ./data/inputs/env_config.json ./gridworld/scenarios/data/env_config.json
 
     python -u ./examples/marl/rllib/heterogeneous/train_hs.py \
-        --stop-iters 100 \
+        --stop-iters 1 \
         --stop-reward -1 \
         --num-cpus 4 \
         --num-gpus 0 \
@@ -27,7 +27,7 @@ else
     cp /PowerGridworld/data/inputs/env_config.json /PowerGridworld/gridworld/scenarios/data/env_config.json
 
     python -u /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.py \
-        --stop-iters 100 \
+        --stop-iters 1 \
         --stop-reward -1 \
         --num-cpus 4 \
         --num-gpus 0 \

@@ -37,7 +37,9 @@ class HSAgentTrainingCallback(DefaultCallbacks):
     ):
         # TODO change this in subcomponents to use the component name to remove hard-coding.
         #print(dir(episode))
-        ep_lastinfo = episode.last_info_for()
+        #ep_lastinfo = episode.last_info_for()
+        agents = episode.get_agents()
+        ep_lastinfo = episode._last_infos[agents[-1]]
 
 
         step_meta = ep_lastinfo.get('step_meta', None)
@@ -226,12 +228,13 @@ def main(**args):
     with open(args["input_dir"]+ '/map.json', 'r') as f:
         map = json.load(f)
 
-    perm = permutations( list(map.keys()), len(list(map.keys()))   )
-    
- 
-    perm = list(islice(cycle(perm), args["stop_iters"]))
 
-    perm = random.shuffle(perm)
+    perm = list(permutations( list(map.keys()), len(list(map.keys()))   ))
+    random.shuffle(perm)
+ 
+    perm = list(islice(cycle(list(perm)), args["stop_iters"]))
+
+  
 
     last_checkpoint=None
 
@@ -311,13 +314,13 @@ def main(**args):
                 checkpoint_score_attr="episode_reward_mean",
                 keep_checkpoints_num=100,
                 stop=stop,
-            # callbacks=[HSDataLoggerCallback()],
+                callbacks=[HSDataLoggerCallback()],
                 config={
                     "env": env_name,
                     "env_config": env_config,
                     "num_gpus": args["num_gpus"],
                     "num_workers": num_workers,
-                #    "callbacks": HSAgentTrainingCallback,
+                    "callbacks": HSAgentTrainingCallback,
                     # "multiagent": {
                     #     "policies": {
                     #         agent_id: (None, obs_space[agent_id], act_space[agent_id], {}) 
