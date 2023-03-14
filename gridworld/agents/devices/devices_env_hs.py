@@ -24,6 +24,7 @@ class HSDevicesEnv(ComponentEnv):
         scaling_factor: float = 1.,
         rescale_spaces: bool = True,
         max_episode_steps: int = None,
+        minutes_per_step : int = 5,
         **kwargs
     ):
 
@@ -47,6 +48,7 @@ class HSDevicesEnv(ComponentEnv):
 
         self.scaling_factor = scaling_factor
         self.rescale_spaces = rescale_spaces
+        self.minutes_per_step = minutes_per_step
 
         if profile_data != {}:
             data_np=np.array([ v for k,v in profile_data.items()] ).T
@@ -122,7 +124,7 @@ class HSDevicesEnv(ComponentEnv):
 
     def step_reward(self, **kwargs):
         """Step reward is always zero."""
-        step_cost = self.current_cost * self._real_power 
+        step_cost = self.current_cost * self._real_power * (self.minutes_per_step/60.0)
 
         step_meta = {}
 
