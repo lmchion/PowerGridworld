@@ -16,7 +16,7 @@ then
 
     python -u ./examples/marl/rllib/heterogeneous/train_hs.py \
         --stop-iters 100 \
-        --stop-reward -4 \
+        --stop-reward -1 \
         --num-cpus 4 \
         --num-gpus 0 \
         --local-dir ./data/outputs/ray_results \
@@ -27,7 +27,7 @@ else
 
     python -u /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.py \
         --stop-iters 100 \
-        --stop-reward -4 \
+        --stop-reward -1 \
         --num-cpus 4 \
         --num-gpus 0 \
         --local-dir ./PowerGridworld/data/outputs/ray_results \

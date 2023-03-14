@@ -25,6 +25,7 @@ class HSPVEnv(ComponentEnv):
         rescale_spaces: bool = True,
         grid_aware: bool = False,
         max_episode_steps: int = None,
+        minutes_per_step : int = 5,
         **kwargs
     ):
         """
@@ -52,6 +53,7 @@ class HSPVEnv(ComponentEnv):
         self.scaling_factor = scaling_factor
         self.rescale_spaces = rescale_spaces
         self.grid_aware = grid_aware
+        self.minutes_per_step = minutes_per_step
 
 
         if profile_data != []:
