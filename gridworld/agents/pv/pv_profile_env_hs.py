@@ -109,17 +109,21 @@ class HSPVEnv(ComponentEnv):
         raw_obs = [-self.data[self.index]]
         if self.grid_aware:
             raw_obs = raw_obs + [kwargs["min_voltage"]]
+
         raw_obs = np.array(raw_obs)
         if self.rescale_spaces:
             obs = to_scaled(raw_obs, self._observation_space.low, self._observation_space.high)
         else:
             obs = raw_obs
         
-        meta= {"real_power": raw_obs[0]}
-        meta.update(kwargs)
-        meta['pv_power']=meta['real_power']
+        meta= {"real_power": -raw_obs[0]}
         
-        return obs,meta
+        meta['pv_power']=meta['real_power']
+
+        kwargs.update(meta)
+      
+        
+        return obs,kwargs
     
     def reset(self, *, seed=None, options=None, **kwargs):
         """Resetting consists of simply putting the index back to 0."""
