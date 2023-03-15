@@ -134,3 +134,4 @@ examples/marl/rllib/heterogeneous/ray_results/*
 data/*
 PowerGridworld/data/outputs/*
 
+examples/marl/rllib/heterogeneous/data/outputs/ray_results/PPO/basic-variant-state-2023-03-14_22-54-24.json

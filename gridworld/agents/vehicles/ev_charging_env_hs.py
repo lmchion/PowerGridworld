@@ -271,7 +271,7 @@ class HSEVChargingEnv(ComponentEnv):
         power=self._real_power* (60.0/self.minutes_per_step)
 
 
-        if power==0.0:
+        if power==0.0 or action==0.0:
             self.current_cost =0.0
         else:
             solar_capacity=kwargs['pv_power']
@@ -296,8 +296,8 @@ class HSEVChargingEnv(ComponentEnv):
                 battery_power = min( battery_capacity, power - solar_power - grid_power ) 
 
             # ignore battery cost here since it has already been counted when the battery was charged.
-            if solar_power+grid_power != 0:
-                self.current_cost = (solar_cost*solar_power + grid_cost*grid_power) / (solar_power+ grid_power)
+            if solar_power+grid_power+battery_power > 0:
+                self.current_cost = (solar_cost*solar_power + grid_cost*grid_power+ battery_cost*battery_power) / (solar_power+ grid_power+battery_power)
 
             kwargs['pv_power']=max(0.0, solar_capacity-solar_power)
             kwargs['es_power']=max(0.0, battery_capacity-battery_power)

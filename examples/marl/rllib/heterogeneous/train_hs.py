@@ -162,7 +162,7 @@ class HSDataLoggerCallback(LoggerCallback):
                     timestamp_data["grid_cost"] = i.grid_cost
                     timestamp_data["es_cost"] = i.cost
                     timestamp_data["es_reward"] = i.reward
-                    timestamp_data["es_dev_action"] = i.action
+                    timestamp_data["es_dev_action"] = i.action[-1]
                     timestamp_data["es_current_storage"] = i.device_custom_info["current_storage"]
                     timestamp_data["es_current_psudo_cost"] = i.device_custom_info["current_cost"]
                     timestamp_data["es_consumed_pv_power"] = i.pv_power
@@ -170,7 +170,7 @@ class HSDataLoggerCallback(LoggerCallback):
                 elif i.device == 'ev-charging':
                     timestamp_data["ev_cost"] = i.cost
                     timestamp_data["ev_reward"] = i.reward
-                    timestamp_data["ev_dev_action"] = i.action
+                    timestamp_data["ev_dev_action"] = i.action[-1]
                     timestamp_data["ev_power_unserved"] = i.device_custom_info["power_unserved"]
                     timestamp_data["ev_consumed_es_power"] = i.es_power
                     timestamp_data["ev_consumed_pv_power"] = i.pv_power
@@ -178,12 +178,12 @@ class HSDataLoggerCallback(LoggerCallback):
                 elif i.device == 'other-devices':
                     timestamp_data["oth_dev_cost"] = i.cost
                     timestamp_data["oth_dev_reward"] = i.reward
-                    timestamp_data["oth_dev_action"] = i.action
+                    timestamp_data["oth_dev_action"] = i.action[-1]
                     timestamp_data["oth_dev_consumed_es_power"] = i.es_power
                     timestamp_data["oth_dev_consumed_pv_power"] = i.pv_power
                     timestamp_data["oth_dev_consumed_grid_power"] = i.grid_power
                 elif i.device == 'pv':
-                    timestamp_data["pv_action"] = i.action
+                    timestamp_data["pv_action"] = i.action[-1]
                     timestamp_data["pv_power"] = i.pv_power
 
 
