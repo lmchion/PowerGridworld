@@ -916,7 +916,8 @@
                 "vehicle_multiplier": 1.0,
                 "rescale_spaces": true,
                 "max_charge_cost": 0.57098,
-                "profile_data": {"columns":["event","start_time_days","end_time_days","end_time_park_days","energy_required_kwh","max_charge_rate_kw","start_time_min","end_time_min","end_time_park_min"],"index":[0],"data":[[1,0.625,0,1.0,16.4,11,900,0,1440]]}
+                "profile_data": {"columns":["event","start_time_days","end_time_days","end_time_park_days","energy_required_kwh","max_charge_rate_kw","start_time_min","end_time_min","end_time_park_min"],
+                "index":[0],"data":[[1,0.625,0,1.0,16.4,11,900,0,1380]]}
             }
         },
         {

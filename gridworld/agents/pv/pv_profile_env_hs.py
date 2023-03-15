@@ -118,7 +118,7 @@ class HSPVEnv(ComponentEnv):
         
         meta= {"real_power": -raw_obs[0]}
         
-        meta['pv_power']=meta['real_power']
+        #meta['pv_power']=meta['real_power']
 
         kwargs.update(meta)
       
@@ -147,8 +147,10 @@ class HSPVEnv(ComponentEnv):
         self.index += 1
         rew, rew_meta = self.step_reward(**kwargs)
 
+        rew_meta['pv_power']=self._real_power 
         rew_meta['step_meta']['action'] = action.tolist()
-        rew_meta['step_meta']['pv_power'] = obs_meta["real_power"]
+        #rew_meta['step_meta']['pv_power'] = obs_meta["real_power"]
+        rew_meta['step_meta']['pv_power'] = self._real_power 
         rew_meta['step_meta']['es_power'] = 0
         rew_meta['step_meta']['grid_power'] = 0
         rew_meta['step_meta']['device_custom_info'] = {'pv_actionable_power': self._real_power}
