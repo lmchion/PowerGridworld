@@ -312,7 +312,7 @@ class HSEVChargingEnv(ComponentEnv):
         rew_meta['step_meta']['solar_power_consumed'] = solar_power_consumed
         rew_meta['step_meta']['es_power_consumed'] = battery_power_consumed
         rew_meta['step_meta']['grid_power_consumed'] = grid_power_consumed
-        rew_meta['step_meta']['device_custom_info'] = {'power_ask': power , 'power_unserved': unserved, 'charging_vehicle':len(self.charging_vehicles), 'vehicle_charged': len(self.departed_vehicles), 'solar_power_available': solar_capacity, 'es_power_available':battery_capacity}
+        rew_meta['step_meta']['device_custom_info'] = {'power_ask': power , 'power_unserved': unserved, 'charging_vehicle':len(self.charging_vehicles), 'vehicle_charged': len(self.departed_vehicles), 'solar_power_available': solar_capacity-solar_power_consumed, 'es_power_available':battery_capacity-battery_power_consumed}
 
         done = self.is_terminal()
 

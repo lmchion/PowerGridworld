@@ -115,7 +115,9 @@ class HSEnergyStorageEnv(ComponentEnv):
 
         if power > 0:
             # ensure the discharging power is within the range.
-            if self.current_storage - \
+            if self.current_storage<=self.storage_range[0]:
+                power = 0.0
+            elif self.current_storage - \
                     power * self.control_interval_in_hr * self.discharge_efficiency \
                     < self.storage_range[0]:
                 power = max(self.current_storage - self.storage_range[0], 0.0) /\
@@ -123,10 +125,12 @@ class HSEnergyStorageEnv(ComponentEnv):
 
         elif power < 0:
             # ensure charging does not exceed the limit
-            if self.current_storage - \
+            if self.current_storage>=self.storage_range[1]:
+                power = 0.0
+            elif self.current_storage - \
                     self.charge_efficiency * -power * self.control_interval_in_hr \
                     > self.storage_range[1]:
-                power = - max(self.storage_range[1] - self.current_storage, 0.0) /\
+                power = - max(self.storage_range[1]-self.current_storage, 0.0) /\
                     self.control_interval_in_hr
 
         return power
@@ -209,7 +213,6 @@ class HSEnergyStorageEnv(ComponentEnv):
 
         elif power < 0.0:  # power negative is charging
             delta_storage = self.charge_efficiency * power * self.control_interval_in_hr
-
             # first, take solar energy - the cheapest
             solar_power_consumed=min(-power,solar_capacity)
             
@@ -236,10 +239,11 @@ class HSEnergyStorageEnv(ComponentEnv):
 
 
         elif power > 0.0:  # power positive is discharging
-            self.current_storage -= power * self.control_interval_in_hr / self.discharge_efficiency
-            self.current_storage = max(self.current_storage, self.storage_range[0])
+            delta_storage = power * self.control_interval_in_hr * self.discharge_efficiency
+
+            self.current_storage = max(self.current_storage-delta_storage, self.storage_range[0])
             #kwargs['power'][kwargs['labels'].index('es')]=power 
-            kwargs['es_power']=power
+            kwargs['es_power'] = self.current_storage
 
         #kwargs['cost'][kwargs['labels'].index('es')]=self.current_cost
         kwargs['es_cost'] = self.current_cost
@@ -251,10 +255,10 @@ class HSEnergyStorageEnv(ComponentEnv):
 
 
         rew_meta['step_meta']['action'] = action.tolist() 
-        rew_meta['step_meta']['solar_power_consumed'] = solar_power_consumed
+        rew_meta['step_meta']['solar_power_consumed'] = solar_power_consumed*self.control_interval_in_hr
         rew_meta['step_meta']['es_power_consumed'] = 0
-        rew_meta['step_meta']['grid_power_consumed'] = grid_power_consumed
-        rew_meta['step_meta']['device_custom_info'] = {'current_storage': self.current_storage, 'power_ask': power, 'solar_power_available': solar_capacity}
+        rew_meta['step_meta']['grid_power_consumed'] = grid_power_consumed*self.control_interval_in_hr
+        rew_meta['step_meta']['device_custom_info'] = {'current_storage': self.current_storage, 'power_ask': power*self.control_interval_in_hr, 'solar_power_available': solar_capacity-solar_power_consumed}
 
         if power > 0.0: # discharging for setting the pv and grid power to 0.
             rew_meta['step_meta']['solar_power_consumed'] = 0.0
