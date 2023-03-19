@@ -46,6 +46,7 @@ class HSEnergyStorageEnv(ComponentEnv):
         self.max_power = max_power
         self.current_storage = None
         self.rescale_spaces = rescale_spaces
+        self.max_storage_cost = max_storage_cost
 
         self.simulation_step = 0
         self.max_episode_steps = max_episode_steps
@@ -162,6 +163,15 @@ class HSEnergyStorageEnv(ComponentEnv):
         #the reward has to be negative so higher reward for less cost
 
         reward = -step_cost
+
+        solar_capacity = kwargs['pv_power']
+        battery_capacity = kwargs['es_power']
+        if solar_capacity > 0.0 and battery_capacity > 0.0 and self.current_storage < max(self.storage_range):
+            # When battery capacity is > 0 , it means the agent chose to discharge the battery.
+            # this pseudo penalty is to encourage the agent to charge battery as well when solar is available
+            # adding a simple maxcost penalty when the battery is below half charged and not charging 
+            # when there is solar.
+            reward -= self.max_storage_cost * (max(self.storage_range)-self.current_storage)
         
         step_meta = {}
         step_meta['device_id'] = self.name

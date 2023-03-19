@@ -17,24 +17,28 @@ from gridworld.scenarios.heterogeneous_hs import make_env_config
 
 
 class HSAgentTrainingCallback(DefaultCallbacks):
+    def __init__(self):
+        super().__init__()
+        self._total_episode_cost = 0.0
+
     def on_episode_start(
         self, *, worker, base_env, policies, episode, env_index, **kwargs
     ):
         #episode.user_data["episode_data"] = defaultdict(list)
         episode.media["episode_data"] = []
+        self._total_episode_cost = 0.0
+        self._total_datapoints = 0
+        
 
-    def on_episode_step(
-        self, *, worker, base_env, episode, env_index, **kwargs
-    ):
-        # TODO change this in subcomponents to use the component name to remove hard-coding.
-
+    def on_episode_step(self, *, worker, base_env, episode, env_index, **kwargs):
         ep_lastinfo = episode.last_info_for()
         step_meta = ep_lastinfo.get('step_meta', None)
         grid_cost = ep_lastinfo.get('grid_cost', None)
         es_cost = ep_lastinfo.get('es_cost', None)
         hvac_power = ep_lastinfo.get('hvac_power', None)
         other_power = ep_lastinfo.get('other_power', None)
-        
+        total_cost = 0
+
         for step_meta_item in step_meta:
             episode.media["episode_data"].append([step_meta_item["device_id"], 
                                                   step_meta_item["timestamp"], 
@@ -49,9 +53,18 @@ class HSAgentTrainingCallback(DefaultCallbacks):
                                                   hvac_power,
                                                   other_power,
                                                   step_meta_item["device_custom_info"]])
+            self._total_episode_cost += step_meta_item["cost"]
+            self._total_datapoints += 1
+
+    def on_episode_end(self, *, worker, base_env, policies, episode, env_index, **kwargs) -> None:
+        episode.custom_metrics["total_cost"] = self._total_episode_cost / self._total_datapoints * 287
+
+    
 
 class HSDataLoggerCallback(LoggerCallback):
     def __init__(self):
+        super().__init__()
+
         self._trial_continue = {}
         self._trial_local_dir = {}
 
