@@ -1,13 +1,13 @@
 
 import os
+import time
 
+import gym
 import numpy as np
 import pandas as pd
-import time
-import gym
 
-from gridworld.log import logger
 from gridworld import ComponentEnv
+from gridworld.log import logger
 from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -69,7 +69,7 @@ class HSPVEnv(ComponentEnv):
             # Read the profile data, rescale it, and infer episode length.
             self.data = pd.read_csv(self.profile_csv).values[:, 0].squeeze()
 
-        self.data *= self.scaling_factor
+        self.data = [self.scaling_factor * i for i in self.data]
         self.episode_length = len(self.data)
 
         # Optionally shorted the episode.
@@ -96,7 +96,7 @@ class HSPVEnv(ComponentEnv):
             self._observation_space, rescale=self.rescale_spaces)
 
         self._action_space = gym.spaces.Box(
-            shape=(1,), low=0., high=1., dtype=np.float64)
+            shape=(1,), low=0.98, high=1., dtype=np.float64)
 
         self.action_space = maybe_rescale_box_space(
             self._action_space, rescale=self.rescale_spaces)
@@ -118,7 +118,7 @@ class HSPVEnv(ComponentEnv):
         
         meta= {"real_power": -raw_obs[0]}
         
-        #meta['pv_power']=meta['real_power']
+        meta['pv_power']=meta['real_power']
 
         kwargs.update(meta)
       
@@ -149,11 +149,11 @@ class HSPVEnv(ComponentEnv):
 
         rew_meta['pv_power']=self._real_power 
         rew_meta['step_meta']['action'] = action.tolist()
-        #rew_meta['step_meta']['pv_power'] = obs_meta["real_power"]
-        rew_meta['step_meta']['pv_power'] = self._real_power 
-        rew_meta['step_meta']['es_power'] = 0
-        rew_meta['step_meta']['grid_power'] = 0
-        rew_meta['step_meta']['device_custom_info'] = {'pv_actionable_power': self._real_power}
+        rew_meta['step_meta']['solar_power_consumed'] = obs_meta["real_power"]
+        rew_meta['step_meta']['es_power_consumed'] = 0
+        rew_meta['step_meta']['grid_power_consumed'] = 0
+        rew_meta['step_meta']['device_custom_info'] = {'pv_available_power': obs_meta["real_power"], 'pv_actionable_power': self._real_power}
+
         obs_meta.update(rew_meta)
         #print("pv_obs_meta", obs_meta)
         #time.sleep(60) 
@@ -161,7 +161,6 @@ class HSPVEnv(ComponentEnv):
 
     def step_reward(self, **kwargs):
         step_meta = {}
-
         reward = 0
         
         step_meta["device_id"] = self.name
