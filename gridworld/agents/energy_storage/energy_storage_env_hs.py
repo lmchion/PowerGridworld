@@ -120,7 +120,7 @@ class HSEnergyStorageEnv(ComponentEnv):
             delta_storage = power * self.control_interval_in_hr / self.discharge_efficiency # kw to kwh conversion
             
             if self.current_storage <= st_min:
-                delta_storage = 0.0
+                power = 0.0
             elif self.current_storage - delta_storage < st_min:
                 delta_storage = self.current_storage - st_min
                 power = delta_storage / self.control_interval_in_hr
