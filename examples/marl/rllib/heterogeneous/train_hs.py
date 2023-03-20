@@ -180,9 +180,9 @@ class HSDataLoggerCallback(LoggerCallback):
                     timestamp_data["es_current_storage"] = i.device_custom_info["current_storage"]
                     timestamp_data["es_solar_power_consumed"] = i.solar_power_consumed
                     timestamp_data["es_grid_power_consumed"] = i.grid_power_consumed
-                    timestamp_data["es_solar_power_available"] = i.device_custom_info["solar_power_available"]
-                    timestamp_data["es_grid_power_available"] = i.device_custom_info["grid_power_available"]
-                    timestamp_data["es_es_power_available"] = i.device_custom_info["es_power_available"]
+                    timestamp_data["post_es_solar_power_available"] = i.device_custom_info["solar_power_available"]
+                    timestamp_data["post_es_grid_power_available"] = i.device_custom_info["grid_power_available"]
+                    timestamp_data["post_es_es_power_available"] = i.device_custom_info["es_power_available"]
                 elif i.device == 'ev-charging':
                     timestamp_data["ev_cost"] = i.cost
                     timestamp_data["ev_reward"] = i.reward
@@ -191,9 +191,9 @@ class HSDataLoggerCallback(LoggerCallback):
                     timestamp_data["ev_power_unserved"] = i.device_custom_info["power_unserved"]
                     timestamp_data["ev_charging_vehicle"] = i.device_custom_info["charging_vehicle"]
                     timestamp_data["ev_vehicle_charged"] = i.device_custom_info["vehicle_charged"]
-                    timestamp_data["ev_solar_power_available"] = i.device_custom_info["solar_power_available"]
-                    timestamp_data["ev_es_power_available"] = i.device_custom_info["es_power_available"]
-                    timestamp_data["ev_grid_power_available"] = i.device_custom_info["grid_power_available"]
+                    timestamp_data["post_ev_solar_power_available"] = i.device_custom_info["solar_power_available"]
+                    timestamp_data["post_ev_es_power_available"] = i.device_custom_info["es_power_available"]
+                    timestamp_data["post_ev_grid_power_available"] = i.device_custom_info["grid_power_available"]
                     timestamp_data["ev_solar_power_consumed"] = i.solar_power_consumed
                     timestamp_data["ev_es_power_consumed"] = i.es_power_consumed
                     timestamp_data["ev_grid_power_consumed"] = i.grid_power_consumed
@@ -205,9 +205,9 @@ class HSDataLoggerCallback(LoggerCallback):
                     timestamp_data["oth_dev_es_power_consumed"] = i.es_power_consumed
                     timestamp_data["oth_dev_grid_power_consumed"] = i.grid_power_consumed
                     timestamp_data["oth_dev_power_ask"] = i.device_custom_info["power_ask"]
-                    timestamp_data["oth_dev_solar_power_available"] = i.device_custom_info["solar_power_available"]
-                    timestamp_data["oth_dev_es_power_available"] = i.device_custom_info["es_power_available"]
-                    timestamp_data["oth_dev_grid_power_available"] = i.device_custom_info["grid_power_available"]
+                    timestamp_data["post_oth_dev_solar_power_available"] = i.device_custom_info["solar_power_available"]
+                    timestamp_data["post_oth_dev_es_power_available"] = i.device_custom_info["es_power_available"]
+                    timestamp_data["post_oth_dev_grid_power_available"] = i.device_custom_info["grid_power_available"]
                 elif i.device == 'pv':
                     timestamp_data["pv_reward"] = i.reward
                     timestamp_data["solar_action"] = i.action[-1]

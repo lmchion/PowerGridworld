@@ -112,26 +112,28 @@ class HSEnergyStorageEnv(ComponentEnv):
         Return:
           power: A float, the feasible power of the energy storage.
         """
-
+        st_min = self.storage_range[0]
+        st_max = self.storage_range[1]
+        
         if power > 0:
-            # ensure the discharging power is within the range.
-            if self.current_storage<=self.storage_range[0]:
-                power = 0.0
-            elif self.current_storage - \
-                    power * self.control_interval_in_hr * self.discharge_efficiency \
-                    < self.storage_range[0]:
-                power = max(self.current_storage - self.storage_range[0], 0.0) /\
-                    self.control_interval_in_hr
-
+            # Discharging: ensure the discharging power is within the range.
+            delta_storage = power * self.control_interval_in_hr / self.discharge_efficiency # kw to kwh conversion
+            
+            if self.current_storage <= st_min:
+                delta_storage = 0.0
+            elif self.current_storage - delta_storage < st_min:
+                delta_storage = self.current_storage - st_min
+                power = delta_storage / self.control_interval_in_hr
+            
         elif power < 0:
-            # ensure charging does not exceed the limit
+            # Charging: ensure charging does not exceed the limit
+            delta_storage = - (power * self.control_interval_in_hr * self.charge_efficiency) # kw to kwh conversion
+
             if self.current_storage>=self.storage_range[1]:
                 power = 0.0
-            elif self.current_storage - \
-                    self.charge_efficiency * -power * self.control_interval_in_hr \
-                    > self.storage_range[1]:
-                power = - max(self.storage_range[1]-self.current_storage, 0.0) /\
-                    self.control_interval_in_hr
+            elif self.current_storage + delta_storage > st_max:
+                delta_storage = st_max - self.current_storage
+                power = - (delta_storage / self.control_interval_in_hr)
 
         return power
 
@@ -145,11 +147,9 @@ class HSEnergyStorageEnv(ComponentEnv):
             obs = to_scaled(raw_obs, self._observation_space.low, self._observation_space.high)
         else:
             obs = raw_obs
-
-        meta ={'state_of_charge' : self.current_storage, 'es_cost' : self.current_cost, 'es_power' : self.current_storage }
+        
+        meta ={'state_of_charge' : self.current_storage}
         kwargs.update(meta)
-
-
 
         return obs, kwargs
     
@@ -239,7 +239,7 @@ class HSEnergyStorageEnv(ComponentEnv):
 
 
         elif power > 0.0:  # power positive is discharging
-            delta_storage = power * self.control_interval_in_hr * self.discharge_efficiency
+            delta_storage = power * self.control_interval_in_hr / self.discharge_efficiency
 
             self.current_storage = max(self.current_storage-delta_storage, self.storage_range[0])
             #kwargs['power'][kwargs['labels'].index('es')]=power 
