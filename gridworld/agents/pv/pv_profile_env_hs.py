@@ -168,8 +168,3 @@ class HSPVEnv(ComponentEnv):
         step_meta["cost"] = 0
         step_meta["reward"] = reward
         return reward, {"step_meta": step_meta}
-    
-
-    def is_terminal(self):
-        """The episode is done when the end of the data is reached."""
-        return self.index == self.episode_length

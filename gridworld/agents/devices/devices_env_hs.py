@@ -64,8 +64,8 @@ class HSDevicesEnv(ComponentEnv):
             self.data_pd=pd.read_csv(self.profile_csv)
 
         
-
-        self.data = self.data_pd.values[1:, :].squeeze()
+        
+        self.data = self.data_pd.values[0:, :].squeeze()
         self.data *= self.scaling_factor
         self.episode_length = len(self.data)
 
@@ -166,18 +166,18 @@ class HSDevicesEnv(ComponentEnv):
         solar_power_consumed = 0
         battery_power_consumed = 0
         grid_power_consumed = 0
+        solar_capacity=kwargs['pv_power']
+        battery_capacity = kwargs['es_power']
+        grid_capacity=kwargs['grid_power']
 
         if round(self._real_power,3)==0.0:
             self.current_cost =0.0
         else:
-            solar_capacity=kwargs['pv_power']
             solar_cost=kwargs['pv_cost']
 
-            battery_capacity = kwargs['es_power']
             battery_cost = kwargs['es_cost']
 
             grid_cost=kwargs['grid_cost']
-            grid_capacity=kwargs['grid_power']
             
             solar_power_consumed=min(self._real_power,solar_capacity)
             battery_power_consumed = min( battery_capacity, self._real_power - solar_power_consumed ) 
@@ -196,7 +196,7 @@ class HSDevicesEnv(ComponentEnv):
         rewmeta['step_meta']['solar_power_consumed'] = solar_power_consumed
         rewmeta['step_meta']['es_power_consumed'] = battery_power_consumed
         rewmeta['step_meta']['grid_power_consumed'] = grid_power_consumed
-        rewmeta['step_meta']['device_custom_info'] = {'devices_power_demand': sum_obs_meta, 'devices_actioned_power_demand': self._real_power}
+        rewmeta['step_meta']['device_custom_info'] = {'power_ask': self._real_power, 'solar_power_available': solar_capacity-solar_power_consumed, 'es_power_available':battery_capacity-battery_power_consumed, 'grid_power_available':grid_capacity-grid_power_consumed}
 
 
         obs_meta.update(rewmeta)
