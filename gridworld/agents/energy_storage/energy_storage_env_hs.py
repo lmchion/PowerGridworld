@@ -210,7 +210,7 @@ class HSEnergyStorageEnv(ComponentEnv):
 
         if power==0.0:
             self.delta_cost=0.0
-
+            kwargs['es_power']=0.0
         elif power < 0.0:  # power negative is charging
             delta_storage = self.charge_efficiency * power * self.control_interval_in_hr
             # first, take solar energy - the cheapest
