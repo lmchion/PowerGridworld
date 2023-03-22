@@ -1,3 +1,4 @@
+import json
 import os
 from collections import OrderedDict
 from typing import Tuple
@@ -5,7 +6,6 @@ from typing import Tuple
 import gymnasium as gym
 import numpy as np
 import pandas as pd
-import json
 
 from gridworld import ComponentEnv
 from gridworld.log import logger
@@ -130,8 +130,7 @@ class HSEVChargingEnv(ComponentEnv):
         self.departed_vehicles = []
 
         # Select first N vehicles if not randomized, else shuffle rows of df.
-        self.df = self._df.sample(self.num_vehicles).copy() if self.randomize \
-            else self._df[:self.num_vehicles].copy()
+        self.df = self._df
         self.df = self.df.reset_index()     # index is now 0 to N-1
 
         # Initialize real power.
@@ -167,11 +166,11 @@ class HSEVChargingEnv(ComponentEnv):
     def step_reward(self, **kwargs) -> Tuple[float, dict]:
         """Return a non-zero reward here if you want to use RL."""
 
-        step_cost = self.current_cost * self._real_power + kwargs['grid_cost'] * self.state["real_power_unserved"] 
+        step_cost = self.current_cost * self._real_power
 
         step_meta = {}
 
-        reward = -step_cost
+        reward = -(step_cost + kwargs['grid_cost'] * self.state["real_power_unserved"])
         
         step_meta["device_id"] = self.name
         step_meta["timestamp"] = kwargs['timestamp']
@@ -198,12 +197,12 @@ class HSEVChargingEnv(ComponentEnv):
         end_idx = np.where(self.time <= np.floor(self.df["end_time_park_min"]))[0]
 
         # Get indexes of charging vehicles.
-        charging_vehicles = list(set(list(start_idx)).intersection(set(list(end_idx))))
-        charging_vehicles = [i for i in charging_vehicles if self.df.at[i, "energy_required_kwh"] > 0.]
+        charging_vehicles = list(set(start_idx.flatten()).intersection(set(end_idx.flatten())))
 
+        charging_vehicles = [i for i in charging_vehicles if self.df.at[i, "energy_required_kwh"] > 0.]
+        
         # Get vehicles that have left the station in the last time step.
         self.departed_vehicles = list(set(self.charging_vehicles) - set(charging_vehicles))
-
         logger.debug(f"STEP, {self.time}, {self.time_index}, {charging_vehicles}, {self.departed_vehicles}")
 
         # Aggregate quantities that are needed for obs space.
@@ -265,43 +264,44 @@ class HSEVChargingEnv(ComponentEnv):
         
         # Update the real power attribute needed for component envs.
         self._real_power = self.vehicle_multiplier * real_power_consumed
-
         "############################################################################################"
 
-        power=self._real_power* (60.0/self.minutes_per_step)
-
+        power=self._real_power  * (60.0/self.minutes_per_step)
+        solar_power_consumed = 0
+        battery_power_consumed = 0
+        grid_power_consumed = 0
+        solar_capacity=kwargs['pv_power']
+        battery_capacity = kwargs['es_power']
+        grid_capacity=kwargs['grid_power']
 
         if power==0.0 or action==0.0:
             self.current_cost =0.0
         else:
-            solar_capacity=kwargs['pv_power']
             solar_cost=kwargs['pv_cost']
 
-            battery_capacity = kwargs['es_power']
             battery_cost = kwargs['es_cost']
 
             grid_cost=kwargs['grid_cost']
-            grid_capacity=kwargs['grid_power']
 
-            solar_power=min(power,solar_capacity)
+            solar_power_consumed=min(power,solar_capacity)
 
             # if we want to consider the battery cost and conserve it for when 
             # grid is more expensive than battery, this below check is required.
             # but then the battery cost in the current_cost calculation can be ignored.
             if battery_cost < grid_cost:
-                battery_power = min( battery_capacity, power - solar_power ) 
-                grid_power=min( grid_capacity, power - solar_power - battery_power )
+                battery_power_consumed = min( battery_capacity, power - solar_power_consumed ) 
+                grid_power_consumed=min( grid_capacity, power - solar_power_consumed - battery_power_consumed )
             elif battery_cost >= grid_cost:
-                grid_power=min( grid_capacity, power - solar_power)
-                battery_power = min( battery_capacity, power - solar_power - grid_power ) 
+                grid_power_consumed=min( grid_capacity, power - solar_power_consumed)
+                battery_power_consumed = min( battery_capacity, power - solar_power_consumed - grid_power_consumed ) 
 
             # ignore battery cost here since it has already been counted when the battery was charged.
-            if solar_power+grid_power+battery_power > 0:
-                self.current_cost = (solar_cost*solar_power + grid_cost*grid_power+ battery_cost*battery_power) / (solar_power+ grid_power+battery_power)
+            if solar_power_consumed+grid_power_consumed+battery_power_consumed > 0:
+                self.current_cost = (solar_cost*solar_power_consumed + grid_cost*grid_power_consumed+ battery_cost*battery_power_consumed) / (solar_power_consumed+ grid_power_consumed+battery_power_consumed)
 
-            kwargs['pv_power']=max(0.0, solar_capacity-solar_power)
-            kwargs['es_power']=max(0.0, battery_capacity-battery_power)
-            kwargs['grid_power']=max(0.0, grid_capacity-grid_power)
+            kwargs['pv_power']=max(0.0, solar_capacity-solar_power_consumed)
+            kwargs['es_power']=max(0.0, battery_capacity-battery_power_consumed)
+            kwargs['grid_power']=max(0.0, grid_capacity-grid_power_consumed)
 
         self._update("current_cost", self.current_cost)
 
@@ -309,10 +309,10 @@ class HSEVChargingEnv(ComponentEnv):
         obs, meta = self.get_obs(**kwargs)
         rew, rew_meta = self.step_reward(**kwargs)
         rew_meta['step_meta']['action'] = action.tolist()
-        rew_meta['step_meta']['pv_power'] = kwargs['pv_power']
-        rew_meta['step_meta']['es_power'] = kwargs['es_power']
-        rew_meta['step_meta']['grid_power'] = kwargs['grid_power']
-        rew_meta['step_meta']['device_custom_info'] = {'power_unserved': unserved}
+        rew_meta['step_meta']['solar_power_consumed'] = solar_power_consumed
+        rew_meta['step_meta']['es_power_consumed'] = battery_power_consumed
+        rew_meta['step_meta']['grid_power_consumed'] = grid_power_consumed
+        rew_meta['step_meta']['device_custom_info'] = {'power_ask': power , 'power_unserved': unserved, 'charging_vehicle':len(self.charging_vehicles), 'vehicle_charged': len(self.departed_vehicles), 'solar_power_available': solar_capacity-solar_power_consumed, 'es_power_available':battery_capacity-battery_power_consumed, 'grid_power_available':grid_capacity-grid_power_consumed}
 
         done = self.is_terminal()
 

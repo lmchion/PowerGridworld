@@ -56,10 +56,10 @@ class HSMultiComponentEnv(MultiComponentEnv):
         
         self.meta_state = { 'timestamp': None,
                             'grid_cost': None,
-                           'es_cost': None,
+                           'es_cost': 0.0,
                            'grid_power': self.max_grid_power,
                            'pv_power': None,
-                           'es_power': None,
+                           'es_power': 0.0,
                            'pv_cost': 0.0,
                            'step_meta': None
                            }

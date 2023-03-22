@@ -1,14 +1,13 @@
+import gym
 import numpy as np
 import pandas as pd
-
 from scipy.stats import truncnorm
 
 import gymnasium as gym
 
 from gridworld import ComponentEnv
-from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
-
 from gridworld.log import logger
+from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
 
 
 class EnergyStorageEnv(ComponentEnv):
@@ -181,29 +180,10 @@ class EnergyStorageEnv(ComponentEnv):
         return obs, {"state_of_charge": raw_obs}
 
     def is_terminal(self):
-        return self.simulation_step >= self.max_episode_steps
+        return self.simulation_step+1 == self.max_episode_steps
 
 
 if __name__ == '__main__':
 
-    env = EnergyStorageEnv('ES')
-    state = env.reset()
-    done = False
-
-    power_history = []
-    soc_history = []
-
-    while not done:
-        # act = env.action_space.sample()
-        act = [-1.0]
-        state, reward, done, info = env.step(act)
-        power = env.real_power
-        power_history.append(power)
-        soc_history.append(state)
-
-    import matplotlib.pyplot as plt
-
-    plt.plot(power_history)
-    plt.plot(soc_history)
-    plt.show()
+   pass
 

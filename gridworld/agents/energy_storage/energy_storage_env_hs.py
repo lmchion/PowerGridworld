@@ -46,6 +46,7 @@ class HSEnergyStorageEnv(ComponentEnv):
         self.max_power = max_power
         self.current_storage = None
         self.rescale_spaces = rescale_spaces
+        self.max_storage_cost = max_storage_cost
 
         self.simulation_step = 0
         self.max_episode_steps = max_episode_steps
@@ -111,22 +112,28 @@ class HSEnergyStorageEnv(ComponentEnv):
         Return:
           power: A float, the feasible power of the energy storage.
         """
-
+        st_min = self.storage_range[0]
+        st_max = self.storage_range[1]
+        
         if power > 0:
-            # ensure the discharging power is within the range.
-            if self.current_storage - \
-                    power * self.control_interval_in_hr / self.discharge_efficiency <\
-                    self.storage_range[0]:
-                power = max(self.current_storage - self.storage_range[0], 0.0) /\
-                    self.control_interval_in_hr
-
+            # Discharging: ensure the discharging power is within the range.
+            delta_storage = power * self.control_interval_in_hr / self.discharge_efficiency # kw to kwh conversion
+            
+            if self.current_storage <= st_min:
+                power = 0.0
+            elif self.current_storage - delta_storage < st_min:
+                delta_storage = self.current_storage - st_min
+                power = delta_storage / self.control_interval_in_hr * self.discharge_efficiency
+            
         elif power < 0:
-            # ensure charging does not exceed the limit
-            if self.current_storage - \
-                    self.charge_efficiency * power * self.control_interval_in_hr >\
-                    self.storage_range[1]:
-                power = - max(self.storage_range[1] - self.current_storage, 0.0) /\
-                    self.control_interval_in_hr
+            # Charging: ensure charging does not exceed the limit
+            delta_storage = - (power * self.control_interval_in_hr * self.charge_efficiency) # kw to kwh conversion
+
+            if self.current_storage >= st_max:
+                power = 0.0
+            elif self.current_storage + delta_storage > st_max:
+                delta_storage = st_max - self.current_storage
+                power = - (delta_storage / self.control_interval_in_hr / self.charge_efficiency)
 
         return power
 
@@ -140,11 +147,9 @@ class HSEnergyStorageEnv(ComponentEnv):
             obs = to_scaled(raw_obs, self._observation_space.low, self._observation_space.high)
         else:
             obs = raw_obs
-
-        meta ={'state_of_charge' : self.current_storage, 'es_cost' : self.current_cost, 'es_power' : self.current_storage }
+        
+        meta ={'state_of_charge' : self.current_storage}
         kwargs.update(meta)
-
-
 
         return obs, kwargs
     
@@ -162,6 +167,15 @@ class HSEnergyStorageEnv(ComponentEnv):
         #the reward has to be negative so higher reward for less cost
 
         reward = -step_cost
+
+        solar_capacity = kwargs['pv_power']
+        battery_capacity = kwargs['es_power']
+        if solar_capacity > 0.0 and battery_capacity > 0.0 and self.current_storage < max(self.storage_range):
+            # When battery capacity is > 0 , it means the agent chose to discharge the battery.
+            # this pseudo penalty is to encourage the agent to charge battery as well when solar is available
+            # adding a simple maxcost penalty when the battery is below half charged and not charging 
+            # when there is solar.
+            reward -= self.max_storage_cost * (max(self.storage_range)-self.current_storage)
         
         step_meta = {}
         step_meta['device_id'] = self.name
@@ -180,6 +194,7 @@ class HSEnergyStorageEnv(ComponentEnv):
             action = to_raw(action, self._action_space.low, self._action_space.high)
 
         power = action[0] * self.max_power
+        
         power = self.validate_power(power)
 
         # solar_capacity =kwargs['power'][kwargs['labels'].index('pv')]
@@ -190,22 +205,23 @@ class HSEnergyStorageEnv(ComponentEnv):
         solar_cost = kwargs['pv_cost']
         grid_cost = kwargs['grid_cost']
         grid_capacity=kwargs['grid_power']
+        solar_power_consumed = 0
+        grid_power_consumed = 0
 
         if power==0.0:
             self.delta_cost=0.0
-
+            kwargs['es_power']=0.0
         elif power < 0.0:  # power negative is charging
             delta_storage = self.charge_efficiency * power * self.control_interval_in_hr
-
             # first, take solar energy - the cheapest
-            solar_power=min(-power,solar_capacity)
+            solar_power_consumed=min(-power,solar_capacity)
             
             # the rest, use the grid
-            grid_power=min( grid_capacity, -power - solar_power  )
+            grid_power_consumed=min( grid_capacity, -power - solar_power_consumed  )
 
            
             # calculate the weighted average cost of charging for the time interval
-            self.delta_cost = (solar_cost*solar_power + grid_cost*grid_power)  / (solar_power+ grid_power)
+            self.delta_cost = (solar_cost*solar_power_consumed + grid_cost*grid_power_consumed)  / (solar_power_consumed+ grid_power_consumed)
 
             # update the current cost
             self.current_cost = (self.current_storage  * self.current_cost - delta_storage * self.delta_cost)/ ( self.current_storage - delta_storage  )
@@ -217,34 +233,36 @@ class HSEnergyStorageEnv(ComponentEnv):
             # kwargs['power'][kwargs['labels'].index('pv')]=solar_capacity-solar_power
             # kwargs['power'][kwargs['labels'].index('es')]=0.0
 
-            kwargs['pv_power']=max(0.0, solar_capacity-solar_power)
-            kwargs['grid_power']=max(0.0, grid_capacity-grid_power)
+            kwargs['pv_power']=max(0.0, solar_capacity-solar_power_consumed)
+            kwargs['grid_power']=max(0.0, grid_capacity-grid_power_consumed)
             kwargs['es_power']=0.0
 
 
         elif power > 0.0:  # power positive is discharging
-            self.current_storage -= power * self.control_interval_in_hr / self.discharge_efficiency
-            self.current_storage = max(self.current_storage, self.storage_range[0])
+            delta_storage = power * self.control_interval_in_hr / self.discharge_efficiency
+
+            self.current_storage = max(self.current_storage-delta_storage, self.storage_range[0])
             #kwargs['power'][kwargs['labels'].index('es')]=power 
-            kwargs['es_power']=power
+            kwargs['es_power'] = power
 
         #kwargs['cost'][kwargs['labels'].index('es')]=self.current_cost
-        kwargs['es_cost'] = self.current_cost
+        kwargs['es_cost'] = 0 #self.current_cost
         #  Convert to the positive for load and  negative for generation convention.
         self._real_power = -power
-
         obs, obs_meta = self.get_obs(**kwargs)
+
         rew, rew_meta = self.step_reward(**kwargs)
 
+
         rew_meta['step_meta']['action'] = action.tolist() 
-        rew_meta['step_meta']['pv_power'] = kwargs['pv_power']
-        rew_meta['step_meta']['es_power'] = kwargs['es_power']
-        rew_meta['step_meta']['grid_power'] = kwargs['grid_power']
-        rew_meta['step_meta']['device_custom_info'] = {'current_storage': self.current_storage, 'current_cost': self.current_cost}
+        rew_meta['step_meta']['solar_power_consumed'] = solar_power_consumed
+        rew_meta['step_meta']['es_power_consumed'] = 0
+        rew_meta['step_meta']['grid_power_consumed'] = grid_power_consumed
+        rew_meta['step_meta']['device_custom_info'] = {'current_storage': self.current_storage, 'power_ask': power, 'solar_power_available': solar_capacity-solar_power_consumed, 'grid_power_available':grid_capacity-grid_power_consumed, 'es_power_available':kwargs['es_power']}
 
         if power > 0.0: # discharging for setting the pv and grid power to 0.
-            rew_meta['step_meta']['pv_power'] = 0.0
-            rew_meta['step_meta']['grid_power'] = 0.0
+            rew_meta['step_meta']['solar_power_consumed'] = 0.0
+            rew_meta['step_meta']['grid_power_consumed'] = 0.0
 
         obs_meta.update(rew_meta)
         self.simulation_step += 1
@@ -254,5 +272,3 @@ class HSEnergyStorageEnv(ComponentEnv):
 
     def is_terminal(self):
         return self.simulation_step == self.max_episode_steps
-
-    
