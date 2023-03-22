@@ -44,8 +44,8 @@ echo "running locally" $run_locally
 if [ "$run_locally"  = "true" ]
 then
     python -u ./examples/marl/rllib/heterogeneous/train_hs.py \
-        --stop-iters 1 \
-        --stop-reward -1 \
+        --stop-iters 200 \
+        --stop-reward -0.5 \
         --num-cpus 2 \
         --num-gpus 0 \
         --local-dir ./data/outputs/ray_results \
@@ -57,8 +57,8 @@ else
     python -u /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.py \
         --stop-iters 1 \
         --stop-reward -1 \
-        --num-cpus 2 \
-        --num-gpus 0 \
+        --num-cpus 32 \
+        --num-gpus 2 \
         --local-dir ./PowerGridworld/data/outputs/ray_results \
         --max-episode-steps 288 \
         --input-dir ./PowerGridworld/data/inputs
