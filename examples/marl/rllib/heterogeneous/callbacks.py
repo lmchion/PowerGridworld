@@ -13,19 +13,24 @@ from gridworld.log import logger
 import json
 
 class HSAgentTrainingCallback(DefaultCallbacks):
+
+    def __init__(self):
+        super().__init__()
+        self._total_episode_cost = 0.0   
+
+
     def on_episode_start(
         self, *, worker : RolloutWorker, base_env : BaseEnv, 
         policies: Dict[str, Policy], episode : Episode , env_index : int, **kwargs
     ):
         #episode.user_data["episode_data"] = defaultdict(list)
         episode.media["episode_data"] = []
+        self._total_episode_cost = 0.0
+        self._total_datapoints = 0
 
     def on_episode_step(
         self, *, worker : RolloutWorker, base_env : BaseEnv, episode : Episode , env_index : int, **kwargs
     ):
-        # TODO change this in subcomponents to use the component name to remove hard-coding.
-        #print(dir(episode))
-        #ep_lastinfo = episode.last_info_for()
         agents = episode.get_agents()
         ep_lastinfo = episode._last_infos[agents[-1]]
 
@@ -35,24 +40,32 @@ class HSAgentTrainingCallback(DefaultCallbacks):
         es_cost = ep_lastinfo.get('es_cost', None)
         hvac_power = ep_lastinfo.get('hvac_power', None)
         other_power = ep_lastinfo.get('other_power', None)
-        
+        total_cost = 0
+
         for step_meta_item in step_meta:
             episode.media["episode_data"].append([step_meta_item["device_id"], 
                                                   step_meta_item["timestamp"], 
                                                   step_meta_item["cost"], 
                                                   step_meta_item["reward"],
                                                   step_meta_item["action"], 
-                                                  step_meta_item["pv_power"], 
-                                                  step_meta_item["es_power"], 
-                                                  step_meta_item["grid_power"],
+                                                  step_meta_item["solar_power_consumed"], 
+                                                  step_meta_item["es_power_consumed"], 
+                                                  step_meta_item["grid_power_consumed"],
                                                   grid_cost,
                                                   es_cost,
                                                   hvac_power,
                                                   other_power,
                                                   step_meta_item["device_custom_info"]])
+            self._total_episode_cost += step_meta_item["cost"]
+            self._total_datapoints += 1
+
+    def on_episode_end(self, *, worker, base_env, policies, episode, env_index, **kwargs) -> None:
+        episode.custom_metrics["total_cost"] = self._total_episode_cost / self._total_datapoints * 287
 
 class HSDataLoggerCallback(LoggerCallback):
     def __init__(self):
+        super().__init__()
+
         self._trial_continue = {}
         self._trial_local_dir = {}
 
@@ -89,9 +102,9 @@ class HSDataLoggerCallback(LoggerCallback):
                             "cost", 
                             "reward",
                             "action", 
-                            "pv_power", 
-                            "es_power", 
-                            "grid_power",
+                            "solar_power_consumed", 
+                            "es_power_consumed", 
+                            "grid_power_consumed",
                             "grid_cost",
                             "es_cost",
                             "hvac_power",
@@ -134,9 +147,9 @@ class HSDataLoggerCallback(LoggerCallback):
                             "cost", 
                             "reward",
                             "action", 
-                            "pv_power", 
-                            "es_power", 
-                            "grid_power",
+                            "solar_power_consumed", 
+                            "es_power_consumed", 
+                            "grid_power_consumed",
                             "grid_cost",
                             "es_cost",
                             "hvac_power",
@@ -160,32 +173,47 @@ class HSDataLoggerCallback(LoggerCallback):
             
             for i in tmp_timestamp_data.itertuples():
                 if i.device == 'storage':
-                    timestamp_data["grid_cost"] = i.grid_cost
+                    timestamp_data["grid_price"] = i.grid_cost
                     timestamp_data["es_cost"] = i.cost
                     timestamp_data["es_reward"] = i.reward
-                    timestamp_data["es_dev_action"] = i.action
+                    timestamp_data["es_action"] = i.action[-1]
+                    timestamp_data["es_power_ask"] = i.device_custom_info["power_ask"]
                     timestamp_data["es_current_storage"] = i.device_custom_info["current_storage"]
-                    timestamp_data["es_current_psudo_cost"] = i.device_custom_info["current_cost"]
-                    timestamp_data["es_consumed_pv_power"] = i.pv_power
-                    timestamp_data["es_consumed_grid_power"] = i.grid_power
+                    timestamp_data["es_solar_power_consumed"] = i.solar_power_consumed
+                    timestamp_data["es_grid_power_consumed"] = i.grid_power_consumed
+                    timestamp_data["es_post_solar_power_available"] = i.device_custom_info["solar_power_available"]
+                    timestamp_data["es_post_grid_power_available"] = i.device_custom_info["grid_power_available"]
+                    timestamp_data["es_post_es_power_available"] = i.device_custom_info["es_power_available"]
                 elif i.device == 'ev-charging':
                     timestamp_data["ev_cost"] = i.cost
                     timestamp_data["ev_reward"] = i.reward
-                    timestamp_data["ev_dev_action"] = i.action
+                    timestamp_data["ev_action"] = i.action[-1]
+                    timestamp_data["ev_power_ask"] = i.device_custom_info["power_ask"]
                     timestamp_data["ev_power_unserved"] = i.device_custom_info["power_unserved"]
-                    timestamp_data["ev_consumed_es_power"] = i.es_power
-                    timestamp_data["ev_consumed_pv_power"] = i.pv_power
-                    timestamp_data["ev_consumed_grid_power"] = i.grid_power
+                    timestamp_data["ev_charging_vehicle"] = i.device_custom_info["charging_vehicle"]
+                    timestamp_data["ev_vehicle_charged"] = i.device_custom_info["vehicle_charged"]
+                    timestamp_data["ev_post_solar_power_available"] = i.device_custom_info["solar_power_available"]
+                    timestamp_data["ev_post_es_power_available"] = i.device_custom_info["es_power_available"]
+                    timestamp_data["ev_post_grid_power_available"] = i.device_custom_info["grid_power_available"]
+                    timestamp_data["ev_solar_power_consumed"] = i.solar_power_consumed
+                    timestamp_data["ev_es_power_consumed"] = i.es_power_consumed
+                    timestamp_data["ev_grid_power_consumed"] = i.grid_power_consumed
                 elif i.device == 'other-devices':
                     timestamp_data["oth_dev_cost"] = i.cost
                     timestamp_data["oth_dev_reward"] = i.reward
-                    timestamp_data["oth_dev_action"] = i.action
-                    timestamp_data["oth_dev_consumed_es_power"] = i.es_power
-                    timestamp_data["oth_dev_consumed_pv_power"] = i.pv_power
-                    timestamp_data["oth_dev_consumed_grid_power"] = i.grid_power
+                    timestamp_data["oth_dev_action"] = i.action[-1]
+                    timestamp_data["oth_dev_solar_power_consumed"] = i.solar_power_consumed
+                    timestamp_data["oth_dev_es_power_consumed"] = i.es_power_consumed
+                    timestamp_data["oth_dev_grid_power_consumed"] = i.grid_power_consumed
+                    timestamp_data["oth_dev_power_ask"] = i.device_custom_info["power_ask"]
+                    timestamp_data["oth_dev_post_solar_power_available"] = i.device_custom_info["solar_power_available"]
+                    timestamp_data["oth_dev_post_es_power_available"] = i.device_custom_info["es_power_available"]
+                    timestamp_data["oth_dev_post_grid_power_available"] = i.device_custom_info["grid_power_available"]
                 elif i.device == 'pv':
-                    timestamp_data["pv_action"] = i.action
-                    timestamp_data["pv_power"] = i.pv_power
+                    timestamp_data["pv_reward"] = i.reward
+                    timestamp_data["solar_action"] = i.action[-1]
+                    timestamp_data["solar_available_power"] = i.device_custom_info["pv_available_power"]
+                    timestamp_data["solar_actionable_power"] = i.device_custom_info["pv_actionable_power"]
 
 
             final_csv_rows.append(timestamp_data)
