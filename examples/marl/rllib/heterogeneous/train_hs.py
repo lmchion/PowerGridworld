@@ -11,7 +11,7 @@ from ray.tune.registry import register_env
 
 from gridworld.log import logger
 from gridworld.scenarios.heterogeneous_hs import make_env_config
-import json
+import json,time
 from collections import OrderedDict
 from itertools import permutations,cycle, islice
 import random
@@ -47,7 +47,7 @@ def main(**args):
 
   
 
-    last_checkpoint=None
+    checkpoint=None
 
     for env_set in perm:
         print("env_set",env_set)
@@ -140,7 +140,7 @@ def main(**args):
                     #     "policy_mapping_fn": (lambda agent_id: agent_id)
                     # },
                     "log_level": args["log_level"].upper(),
-                    "restore" : last_checkpoint,
+                    "restore" : checkpoint,
                     **framework_config,
                     **hyperparam_config,
                     **evaluation_config
@@ -148,8 +148,20 @@ def main(**args):
                 verbose=0
             )
 
+            finished=False
+            while not finished:
+                last_checkpoint=experiment.get_last_checkpoint()
+                if checkpoint==last_checkpoint or checkpoint==None:
+                    logger.info(f"run: {env} not finished")
+                    logger.info(last_checkpoint)
+                    time.sleep(10)
+                else:
+                    finished=True
+                    checkpoint=last_checkpoint
+                    logger.info(f"run: {env} not finished")
+                    logger.info(last_checkpoint)
 
-            last_checkpoint=experiment.get_last_checkpoint()
+            
             print("last_checkpoint :",last_checkpoint)
             #return experiment
 
