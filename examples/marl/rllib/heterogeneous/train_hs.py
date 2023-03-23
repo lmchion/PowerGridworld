@@ -151,18 +151,17 @@ def main(**args):
             finished=False
             while not finished:
                 last_checkpoint=experiment.get_last_checkpoint()
-                if checkpoint==last_checkpoint or checkpoint==None:
+                if env.is_terminal():
                     logger.info(f"run: {env} not finished")
                     logger.info(last_checkpoint)
                     time.sleep(10)
                 else:
                     finished=True
                     checkpoint=last_checkpoint
-                    logger.info(f"run: {env} not finished")
+                    logger.info(f"run: {env} finished")
                     logger.info(last_checkpoint)
 
             
-            print("last_checkpoint :",last_checkpoint)
             #return experiment
 
     

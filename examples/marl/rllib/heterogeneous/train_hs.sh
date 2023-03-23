@@ -46,7 +46,7 @@ then
     python -u ./examples/marl/rllib/heterogeneous/train_hs.py \
         --stop-iters 200 \
         --stop-reward -0.5 \
-        --num-cpus 2 \
+        --num-cpus 4 \
         --num-gpus 0 \
         --local-dir ./data/outputs/ray_results \
         --max-episode-steps 288 \

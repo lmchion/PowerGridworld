@@ -31,7 +31,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
             rescale_spaces: bool = True,
             **kwargs
     ):
-
+        self.done=False
         self.max_grid_power = max_grid_power
 
         #super().__init__(name=common_config.name, components=env_config.components, **kwargs)
@@ -173,7 +173,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         #logger.info(f"META: {meta}")
         # Set real power attribute.  TODO:  Reactive power.
         self._real_power = real_power
-
+        self.done=any(dones)
         # Compute the step reward using user-implemented method.
         step_reward, _ = self.step_reward(**self.meta_state)
         self.time_index += 1
@@ -197,3 +197,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
                 meta[env.name] = m.copy()
 
         return reward, meta
+
+    def is_terminal(self):
+        """The episode is done when the end of the data is reached."""
+        return self.done
