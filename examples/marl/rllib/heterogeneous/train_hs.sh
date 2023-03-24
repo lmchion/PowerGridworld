@@ -43,25 +43,25 @@ echo "running locally" $run_locally
 
 if [ "$run_locally"  = "true" ]
 then
-    python -u ./examples/marl/rllib/heterogeneous/train_hs.py \
-        --stop-iters 200 \
+    python -u ./examples/marl/rllib/heterogeneous/train_loop_hs.py \
+        --stop-iters 100 \
         --stop-reward -0.5 \
-        --num-cpus 4 \
+        --num-cpus 1 \
         --num-gpus 0 \
-        --local-dir ./data/outputs/ray_results \
+        --local-dir $(pwd)/data/outputs/ray_results \
         --max-episode-steps 288 \
-        --input-dir ./data/inputs \
+        --input-dir $(pwd)/data/inputs \
         
 else
-
-    python -u /PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.py \
-        --stop-iters 1 \
-        --stop-reward -1 \
-        --num-cpus 32 \
-        --num-gpus 2 \
-        --local-dir ./PowerGridworld/data/outputs/ray_results \
+    cd PowerGridworld
+    python -u $(pwd)/examples/marl/rllib/heterogeneous/train_loop_hs.py \
+        --stop-iters 100 \
+        --stop-reward -0.5 \
+        --num-cpus 1 \
+        --num-gpus 0 \
+        --local-dir $(pwd)/data/outputs/ray_results \
         --max-episode-steps 288 \
-        --input-dir ./PowerGridworld/data/inputs
+        --input-dir $(pwd)/data/inputs
 
 fi
 
