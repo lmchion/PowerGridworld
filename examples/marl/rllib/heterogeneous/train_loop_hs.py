@@ -23,7 +23,6 @@ def main(**args):
     perm = list(islice(cycle(list(perm)), args["stop_iters"]))
 
     last_checkpoint=None
-    checkpoints=[]
 
     for env_set in perm:
         print("env_set",env_set)

@@ -46,25 +46,26 @@ echo "running locally" $run_locally
 
 if [ "$run_locally"  = "true" ]
 then
-    python -u ./examples/marl/rllib/heterogeneous/test_hs.py \
+    python -u ./examples/marl/rllib/heterogeneous/test_loop_hs.py \
         --stop-iters 1 \
-        --stop-reward -1 \
-        --num-cpus 4 \
+        --stop-reward -0.5 \
+        --num-cpus 1 \
         --num-gpus 0 \
-        --local-dir ./data/outputs/ray_results \
+        --local-dir $(pwd)/data/outputs/ray_results \
         --max-episode-steps 288 \
-        --input-dir ./data/inputs \
+        --input-dir $(pwd)/data/inputs \
         --last-checkpoint $checkpoint  #./outputs/ray_results/PPO/PPO_002_ae10f_00000_0_framework=torch_2023-03-14_16-06-17/checkpoint_000001
-else
 
-    python -u /PowerGridworld/examples/marl/rllib/heterogeneous/test_hs.py \
+else
+    cd PowerGridworld
+    python -u $(pwd)/examples/marl/rllib/heterogeneous/test_loop_hs.py \
         --stop-iters 1 \
-        --stop-reward -1 \
+        --stop-reward -0.5 \
         --num-cpus 4 \
-        --num-gpus 0 \
-        --local-dir ./PowerGridworld/data/outputs/ray_results \
+        --num-gpus 1 \
+        --local-dir $(pwd)/data/outputs/ray_results \
         --max-episode-steps 288 \
-        --input-dir ./PowerGridworld/data/inputs \
+        --input-dir $(pwd)/data/inputs \
         --last-checkpoint $checkpoint  #./outputs/ray_results/PPO/PPO_002_ae10f_00000_0_framework=torch_2023-03-14_16-06-17/checkpoint_000001
 
 fi
