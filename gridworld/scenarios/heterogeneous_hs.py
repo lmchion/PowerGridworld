@@ -40,13 +40,12 @@ def load_grid_cost(start_time: str = None, end_time: str = None):
 
 
 
-def make_env_config(input_path):
+def make_env_config(env_config):
 
     # with open(os.path.join(THIS_DIR, "data/env_config.json"), 'r') as f:
     #     env_config = json.load(f)
 
-    with open(input_path, 'r') as f:
-         env_config = json.load(f)
+    
          
     for elem in env_config['components']:
         elem['cls']= getattr(sys.modules[__name__], elem['cls'])

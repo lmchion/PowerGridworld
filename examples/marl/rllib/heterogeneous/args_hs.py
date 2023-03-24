@@ -19,6 +19,7 @@ parser.add_argument("--num-samples", default=1, type=int)
 parser.add_argument("--log-level", default="WARN", type=str)
 parser.add_argument("--node-ip-address", default="127.0.0.1", type=str)
 parser.add_argument("--input-dir", default=data_dir + '/inputs', type=str)
+parser.add_argument("--input-file-name", default='001.json', type=str)
 parser.add_argument("--last-checkpoint", default=None, type=str)
 
 
