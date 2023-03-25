@@ -33,7 +33,8 @@ def main(**args):
     
     # Run ray on a single node.  If running on VPN, you might need some bash 
     # magic, see e.g. train.sh.
-    ray.init(_node_ip_address=args["node_ip_address"], log_to_driver=True, logging_level="error")
+    ray.init(_node_ip_address=args["node_ip_address"],  log_to_driver=True, logging_level="error")
+    #num_cpus=args['num_cpus'], num_gpus=args['num_gpus'],
 
     if args['last_checkpoint']!='None':
         #checkpoint=Checkpoint(local_path= args['last_checkpoint'])

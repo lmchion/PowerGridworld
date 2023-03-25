@@ -15,9 +15,10 @@ def main(**args):
     with open(args["input_dir"]+ '/map.json', 'r') as f:
         map = json.load(f)
 
+    iters={}
 
-
-    for env in list(map.keys()):
+    for num,env in enumerate(list(map.keys())):
+        iters[num]=env
         print("env",env)
         timeStarted = time.time()  
         proc = subprocess.run(['python','-u','train_hs.py', 
@@ -36,7 +37,10 @@ def main(**args):
         timeDelta = time.time() - timeStarted                     # Get execution time.
         print("Finished "+env+" process in "+str(timeDelta)+" seconds.") 
 
+        output_dir='/'.join(args["last_checkpoint"].split('/')[:-2])
 
+        with open(output_dir+'/current_iteration.json', 'w') as f:
+            json.dump(iters, f)
 
         
 if __name__ == "__main__":

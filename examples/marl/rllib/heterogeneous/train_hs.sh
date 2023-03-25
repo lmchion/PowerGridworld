@@ -37,24 +37,23 @@ done
 
 clear
 
-
-
 echo "running locally" $run_locally
 
 if [ "$run_locally"  = "true" ]
 then
-
+    cd ~/PowerGridworld
+    rm -rf $(pwd)/data/outputs/ray_results/PPO/*
     python3 -u $(pwd)/examples/marl/rllib/heterogeneous/train_loop_hs.py \
         --stop-iters 100 \
         --stop-reward -0.5 \
-        --num-cpus 1 \
-        --num-gpus 0 \
+        --num-cpus 0 \
+        --num-gpus 1 \
         --local-dir $(pwd)/data/outputs/ray_results \
         --max-episode-steps 288 \
         --input-dir $(pwd)/data/inputs \
         
 else
-    cd PowerGridworld
+    cd /PowerGridworld
     python3 -u $(pwd)/examples/marl/rllib/heterogeneous/train_loop_hs.py \
         --stop-iters 100 \
         --stop-reward -0.5 \
