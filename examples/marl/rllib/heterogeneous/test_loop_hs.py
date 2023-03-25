@@ -39,6 +39,9 @@ def main(**args):
 
         output_dir='/'.join(args["last_checkpoint"].split('/')[:-2])
 
+        last_checkpoint = re.search('local_path=(.*)\)\\n', str(proc.stdout, 'UTF-8') )
+        last_checkpoint=last_checkpoint.group(1)
+
         with open(output_dir+'/current_iteration.json', 'w') as f:
             json.dump(iters, f)
 
