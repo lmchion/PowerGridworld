@@ -43,7 +43,7 @@ echo "running locally" $run_locally
 
 if [ "$run_locally"  = "true" ]
 then
-    cd PowerGridworld
+
     python3 -u $(pwd)/examples/marl/rllib/heterogeneous/train_loop_hs.py \
         --stop-iters 100 \
         --stop-reward -0.5 \

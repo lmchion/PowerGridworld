@@ -17,14 +17,17 @@ def main(**args):
         map = json.load(f)
 
 
-    perm = list(permutations( list(map.keys()), len(list(map.keys()))   ))
-    random.shuffle(perm)
+    #perm = list(permutations( list(map.keys()), len(list(map.keys()))   ))
+    #random.shuffle(perm)
  
-    perm = list(islice(cycle(list(perm)), args["stop_iters"]))
+    #perm = list(islice(cycle(list(perm)), args["stop_iters"]))
 
     last_checkpoint=None
+    env_set=list(map.keys())
 
-    for env_set in perm:
+    for i in range(0,int(args["stop_iters"])):
+        print("iteration",i+1)
+        random.shuffle(env_set)
         print("env_set",env_set)
         for env in env_set:
             print("env",env)
@@ -41,7 +44,7 @@ def main(**args):
                                          '--last-checkpoint',str(last_checkpoint),
                                          ],
                                             cwd=directory, capture_output=True)
-            #print(proc)
+            print(proc)
             timeDelta = time.time() - timeStarted                     # Get execution time.
             print("Finished "+env+" process in "+str(timeDelta)+" seconds.") 
 
