@@ -8,6 +8,7 @@ import ray
 from ray import tune
 
 from ray.tune.registry import register_env
+from ray.cluster_utils import Cluster
 
 from gridworld.log import logger
 from gridworld.scenarios.heterogeneous_hs import make_env_config
@@ -71,9 +72,9 @@ def main(**args):
     # Set any stopping conditions.
     stop = {
         #'training_iteration': args["stop_iters"],
-        'training_iteration': 1,
-        'timesteps_total': args["stop_timesteps"],
-        'episode_reward_mean': args["stop_reward"]
+        'training_iteration': int(args["training_iteration"]),
+        'timesteps_total': int(args["stop_timesteps"]),
+        'episode_reward_mean': float(args["stop_reward"])
     }
 
     # Configure the deep learning framework.
@@ -117,6 +118,7 @@ def main(**args):
         stop=stop,
         callbacks=[HSDataLoggerCallback()],
         restore=checkpoint,
+        resume="AUTO",
         config={
             "env": env_name,
             "env_config": env_config,
@@ -138,7 +140,20 @@ def main(**args):
         },
         verbose=0
     )
-    
+
+    dir(experiment)
+    # not_ready=[]
+    # while len(not_ready)==0:
+    #     ready, not_ready = ray.wait([env])
+    #     print("ready : ",ready,"not ready : ",not_ready)
+
+    # while (ray.global_state.cluster_resources() !=
+    #    ray.global_state.available_resources()):
+    #     time.sleep(1)
+    start=time.time()
+    while (experiment.get_best_logdir("training_iteration", mode="max") not in experiment.trial_dataframes.keys() or  ):
+        print("waiting")
+        time.sleep(1)
 
     last_checkpoint=experiment.get_last_checkpoint()
     return(last_checkpoint)

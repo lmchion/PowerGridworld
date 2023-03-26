@@ -25,8 +25,9 @@ def main(**args):
     last_checkpoint=None
     env_set=list(map.keys())
 
-    for i in range(0,int(args["stop_iters"])):
-        print("iteration",i+1)
+    iter_set=int(args["stop_iters"])/int(args["training_iteration"])
+    for i in range(0,int(iter_set)):
+        print("iteration set",i+1)
         random.shuffle(env_set)
         print("env_set",env_set)
         iters[i]=env_set
@@ -37,25 +38,26 @@ def main(**args):
                                          '--stop-iters',str(args["stop_iters"]), 
                                          '--stop-reward',str(args["stop_reward"]), 
                                          '--num-cpus',str(args["num_cpus"]), 
-                                         '--num-gpus',str(args["num_gpus"]), \
+                                         '--num-gpus',str(args["num_gpus"]), 
                                          '--local-dir',args["local_dir"],
                                          '--max-episode-steps',str(args['max_episode_steps']),
                                          '--input-dir',args['input_dir'],
                                          '--input-file-name',str(env)+'.json',
                                          '--last-checkpoint',str(last_checkpoint),
+                                         '--training-iteration',str(args["training_iteration"]),
                                          ],
                                             cwd=directory, capture_output=True)
-
+            print(proc)
             timeDelta = time.time() - timeStarted                     # Get execution time.
             print("Finished "+env+" process in "+str(timeDelta)+" seconds.") 
 
             if last_checkpoint!=None:
                 prior_run_dir='/'.join(last_checkpoint.split('/')[:-1])
                 output_dir='/'.join(last_checkpoint.split('/')[:-2])
-                del_dir = subprocess.run(['rm','-rf',prior_run_dir ])
+                #del_dir = subprocess.run(['rm','-rf',prior_run_dir ])
                 #print(del_dir)
-                for f in glob.glob( output_dir+"/*"+run_date[:-2]+"*.json"):
-                    os.remove(f)
+                #for f in glob.glob( output_dir+"/*"+run_date[:-2]+"*.json"):
+                #    os.remove(f)
 
                 #del_dir = subprocess.run(['rm','-rf',output_dir+'/basic-variant-state-'+run_date+'.json'])
                 #print(del_dir)
