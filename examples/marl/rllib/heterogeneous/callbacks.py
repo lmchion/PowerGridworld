@@ -1,16 +1,19 @@
 
+import json
 import os
 import os.path as osp
-from ray.rllib.evaluation import Episode, RolloutWorker
-from ray.rllib.algorithms.callbacks import DefaultCallbacks
-from ray.rllib.env import BaseEnv
-from ray.rllib.policy import Policy
-from ray.tune.logger import LoggerCallback
 from typing import Dict, Tuple
+
 import numpy as np
 import pandas as pd
+from ray.rllib.algorithms.callbacks import DefaultCallbacks
+from ray.rllib.env import BaseEnv
+from ray.rllib.evaluation import Episode, RolloutWorker
+from ray.rllib.policy import Policy
+from ray.tune.logger import LoggerCallback
+
 from gridworld.log import logger
-import json
+
 
 class HSAgentTrainingCallback(DefaultCallbacks):
 
@@ -63,16 +66,15 @@ class HSAgentTrainingCallback(DefaultCallbacks):
         episode.custom_metrics["total_cost"] = self._total_episode_cost / self._total_datapoints * 287
 
 class HSDataLoggerCallback(LoggerCallback):
-    def __init__(self):
+    def __init__(self, scenario_id):
         super().__init__()
 
         self._trial_continue = {}
         self._trial_local_dir = {}
+        self._scenario_id = scenario_id
 
     def log_trial_start(self, trial):
         trial.init_logdir()
-        self._trial_local_dir[trial] = osp.join(trial.logdir, "episode_data")
-        os.makedirs(self._trial_local_dir[trial], exist_ok=True)
 
     def log_trial_result(self, iteration, trial, result):
 
@@ -85,49 +87,7 @@ class HSDataLoggerCallback(LoggerCallback):
         if os.path.exists(junk1):
             os.remove(junk1)
         if os.path.exists(junk2):
-            os.remove(junk2)
-
-
-        step = result['timesteps_total']
-        dump_file_name = osp.join(
-            self._trial_local_dir[trial], f"data-{step:08d}.json"
-        )
-
-        data = episode_media["episode_data"]            
-
-        episode_data = data[-1]
-
-        extract_columns = ["device", 
-                            "timestamp", 
-                            "cost", 
-                            "reward",
-                            "action", 
-                            "solar_power_consumed", 
-                            "es_power_consumed", 
-                            "grid_power_consumed",
-                            "grid_cost",
-                            "es_cost",
-                            "hvac_power",
-                            "other_power",
-                            "device_custom_info"]
-
-        if not episode_data:
-            logger.info("Episode data tranche is empty while logging. skipping.")
-        
-        df = pd.DataFrame(episode_data, columns=extract_columns)
-
-        device_list = df['device'].unique()
-        final_json = []
-        for device in device_list:
-            device_data = {}
-            device_data['device_id'] = device
-            tmp_device_data = df[df["device"]==device].drop("device", axis=1)
-            device_data['columns'] = list(tmp_device_data.columns.values)
-            device_data['usage_data'] = tmp_device_data.values.tolist()
-            final_json.append(device_data)
-        
-        with open(dump_file_name, mode='w+') as thisfile:
-            json.dump(final_json, thisfile)  
+            os.remove(junk2)  
 
 
     def on_experiment_end(self, trials, **info):
@@ -173,6 +133,7 @@ class HSDataLoggerCallback(LoggerCallback):
             
             for i in tmp_timestamp_data.itertuples():
                 if i.device == 'storage':
+                    timestamp_data["scenario_id"] = self._scenario_id
                     timestamp_data["grid_price"] = i.grid_cost
                     timestamp_data["es_cost"] = i.cost
                     timestamp_data["es_reward"] = i.reward

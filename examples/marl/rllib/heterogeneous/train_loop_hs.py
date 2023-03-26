@@ -1,12 +1,12 @@
 
 
-import os,re
+import glob
+import json
+import os
+import random
+import re
 import subprocess
-from itertools import permutations,cycle, islice
-import random, json
-import time, glob
-
-
+import time
 
 
 def main(**args):
@@ -45,6 +45,7 @@ def main(**args):
                                          '--input-file-name',str(env)+'.json',
                                          '--last-checkpoint',str(last_checkpoint),
                                          '--training-iteration',str(args["training_iteration"]),
+                                        '--scenario-id',env,
                                          ],
                                             cwd=directory, capture_output=True)
             print(proc)

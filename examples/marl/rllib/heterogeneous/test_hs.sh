@@ -46,7 +46,7 @@ echo "running locally" $run_locally
 
 if [ "$run_locally"  = "true" ]
 then
-    python -u ./examples/marl/rllib/heterogeneous/test_loop_hs.py \
+    python -u $(pwd)/examples/marl/rllib/heterogeneous/test_loop_hs.py \
         --stop-iters 1 \
         --stop-reward -0.5 \
         --num-cpus 1 \
