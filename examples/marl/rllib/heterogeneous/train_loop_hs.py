@@ -4,7 +4,7 @@ import os,re
 import subprocess
 from itertools import permutations,cycle, islice
 import random, json
-import time
+import time, glob
 
 
 
@@ -45,7 +45,7 @@ def main(**args):
                                          '--last-checkpoint',str(last_checkpoint),
                                          ],
                                             cwd=directory, capture_output=True)
-            print(proc)
+
             timeDelta = time.time() - timeStarted                     # Get execution time.
             print("Finished "+env+" process in "+str(timeDelta)+" seconds.") 
 
@@ -54,16 +54,22 @@ def main(**args):
                 output_dir='/'.join(last_checkpoint.split('/')[:-2])
                 del_dir = subprocess.run(['rm','-rf',prior_run_dir ])
                 #print(del_dir)
-                del_dir = subprocess.run(['rm','-rf',output_dir+'/basic-variant-state-'+run_date+'.json'])
+                for f in glob.glob( output_dir+"/*"+run_date[:-2]+"*.json"):
+                    os.remove(f)
+
+                #del_dir = subprocess.run(['rm','-rf',output_dir+'/basic-variant-state-'+run_date+'.json'])
                 #print(del_dir)
-                del_dir = subprocess.run(['rm','-rf',output_dir+'/experiment_state-'+run_date+'.json'])
+                #del_dir = subprocess.run(['rm','-rf',output_dir+'/experiment_state-'+run_date+'.json'])
                 #print(del_dir)
+
 
 
             last_checkpoint = re.search('local_path=(.*)\)\\n', str(proc.stdout, 'UTF-8') )
             last_checkpoint=last_checkpoint.group(1)
             run_date = re.search('=torch_(.*)/checkpoint', last_checkpoint )
+            
             run_date=run_date.group(1)
+
 
             print('last_checkpoint',last_checkpoint)
 
