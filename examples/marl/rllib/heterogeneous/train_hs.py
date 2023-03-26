@@ -1,5 +1,6 @@
 """Script for running single-machine training.  If you want to run rllib on a 
 cluster see, e.g., https://docs.ray.io/en/latest/cluster/deploy.html."""
+import csv
 import json
 import os
 import os.path as osp
@@ -7,6 +8,7 @@ import os.path as osp
 import numpy as np
 import pandas as pd
 import ray
+import requests
 from ray import tune
 from ray.rllib.agents.callbacks import DefaultCallbacks
 from ray.tune.logger import LoggerCallback
@@ -57,21 +59,22 @@ class HSAgentTrainingCallback(DefaultCallbacks):
             self._total_datapoints += 1
 
     def on_episode_end(self, *, worker, base_env, policies, episode, env_index, **kwargs) -> None:
-        episode.custom_metrics["total_cost"] = self._total_episode_cost / self._total_datapoints * 287
+        episode.custom_metrics["total_cost"] = self._total_episode_cost
 
-    
 
 class HSDataLoggerCallback(LoggerCallback):
-    def __init__(self):
+    def __init__(self, scenario_id, is_push_data_inline):
         super().__init__()
 
         self._trial_continue = {}
         self._trial_local_dir = {}
+        self._scenario_id = scenario_id
+        self._is_push_data_inline = is_push_data_inline
 
     def log_trial_start(self, trial):
         trial.init_logdir()
-        self._trial_local_dir[trial] = osp.join(trial.logdir, "episode_data")
-        os.makedirs(self._trial_local_dir[trial], exist_ok=True)
+        # self._trial_local_dir[trial] = osp.join(trial.logdir, "episode_data")
+        # os.makedirs(self._trial_local_dir[trial], exist_ok=True)
 
     def log_trial_result(self, iteration, trial, result):
 
@@ -85,49 +88,39 @@ class HSDataLoggerCallback(LoggerCallback):
             os.remove(junk1)
         if os.path.exists(junk2):
             os.remove(junk2)
+ 
 
+    def _push_data(self, logdir, csvname):
+        csv_file_name = osp.join(logdir, csvname+".csv")
+        json_file_name = osp.join(logdir, csvname+".json")
 
-        step = result['timesteps_total']
-        dump_file_name = osp.join(
-            self._trial_local_dir[trial], f"data-{step:08d}.json"
-        )
+        with open(csv_file_name, encoding='utf-8') as csvf:
+            csvReader = csv.DictReader(csvf)
+                
+            # Convert each row into a dictionary
+            # and add it to file
 
-        data = episode_media["episode_data"]            
+            file = [{k:v for k,v in rows.items() if k!=''} for rows in csvReader]
+            
+            output = {'result':file}
+            
+            with open(json_file_name, 'w', encoding='utf-8') as jsonf:
+                jsonf.write(json.dumps(output, indent=4))
+            
+            import requests
 
-        episode_data = data[-1]
-
-        extract_columns = ["device", 
-                            "timestamp", 
-                            "cost", 
-                            "reward",
-                            "action", 
-                            "solar_power_consumed", 
-                            "es_power_consumed", 
-                            "grid_power_consumed",
-                            "grid_cost",
-                            "es_cost",
-                            "hvac_power",
-                            "other_power",
-                            "device_custom_info"]
-
-        if not episode_data:
-            logger.info("Episode data tranche is empty while logging. skipping.")
-        
-        df = pd.DataFrame(episode_data, columns=extract_columns)
-
-        device_list = df['device'].unique()
-        final_json = []
-        for device in device_list:
-            device_data = {}
-            device_data['device_id'] = device
-            tmp_device_data = df[df["device"]==device].drop("device", axis=1)
-            device_data['columns'] = list(tmp_device_data.columns.values)
-            device_data['usage_data'] = tmp_device_data.values.tolist()
-            final_json.append(device_data)
-        
-        with open(dump_file_name, mode='w+') as thisfile:
-            json.dump(final_json, thisfile)  
-
+            # defining the api-endpoint 
+            API_ENDPOINT = "http://44.214.125.207:443/result"
+            headers = {"Content-Type": "application/json; charset=utf-8"}
+            
+            # sending post request and saving response as response object
+            r= requests.post(url=API_ENDPOINT, headers=headers, json=output)
+            
+            # extracting response text
+            response_status = r.status_code 
+            response_content = r.json()
+            logger.info("data push to store; status: "+str(response_status))
+            logger.info("data push to store; response: "+str(response_content))
 
     def on_experiment_end(self, trials, **info):
         print("on_experiment_end dumping the last result for validation..")
@@ -172,6 +165,7 @@ class HSDataLoggerCallback(LoggerCallback):
             
             for i in tmp_timestamp_data.itertuples():
                 if i.device == 'storage':
+                    timestamp_data["scenario_id"] = self._scenario_id
                     timestamp_data["grid_price"] = i.grid_cost
                     timestamp_data["es_cost"] = i.cost
                     timestamp_data["es_reward"] = i.reward
@@ -217,11 +211,15 @@ class HSDataLoggerCallback(LoggerCallback):
 
             final_csv_rows.append(timestamp_data)
         
-        dump_file_name = osp.join(logdir, "final_validation.csv")
+        csvname = "final_validation"
+        dump_file_name = osp.join(logdir, csvname+".csv")
 
         final_df = pd.DataFrame(final_csv_rows)
         final_df.to_csv(dump_file_name, sep=',', encoding='utf-8')
-        
+
+        if self._is_push_data_inline:
+            self._push_data(logdir, csvname)
+
 
 def env_creator(config: dict):
     """Simple wrapper that takes a config dict and returns an env instance."""
@@ -285,6 +283,9 @@ def main(**args):
             "evaluation_config": {"explore": False}
         }
 
+    scenario_id = args["scenario_id"]
+    is_push_data_inline = args["push_data_inline"]
+
     # Configure hyperparameters of the RL algorithm.  train_batch_size is fixed
     # so that results are reproducible, but 34 CPU workers were used in training 
     # -- expect slower performence if using fewer.
@@ -307,7 +308,7 @@ def main(**args):
         checkpoint_score_attr="episode_reward_mean",
         keep_checkpoints_num=100,
         stop=stop,
-        callbacks=[HSDataLoggerCallback()],
+        callbacks=[HSDataLoggerCallback(scenario_id, is_push_data_inline)],
         config={
             "env": env_name,
             "env_config": env_config,

@@ -16,4 +16,5 @@ parser.add_argument("--num-cpus", default=1, type=int)
 parser.add_argument("--num-samples", default=1, type=int)
 parser.add_argument("--log-level", default="WARN", type=str)
 parser.add_argument("--node-ip-address", default="127.0.0.1", type=str)
-
+parser.add_argument("--scenario-id", default="9", type=str)
+parser.add_argument("--push-data-inline", default=False, type=bool)
