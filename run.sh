@@ -3,8 +3,8 @@
 
 #!/usr/bin/bash
 # 
-# TRAIN -> ./run.sh -i s3://home-steward-s3bucket/scen-train/inputs/ -o s3://home-steward-s3bucket/scen-train/outputs  -t true
-# TEST -> ./run.sh -i s3://home-steward-s3bucket/scen-test/inputs/ -o s3://home-steward-s3bucket/scen-test/outputs  -t false -c s3://home-steward-s3bucket/scen-train/outputs/PPO_003_204cc_00000_0_framework=torch_2023-03-14_21-56-51/checkpoint_000001/
+# TRAIN -> nohup ./run.sh -i s3://home-steward-s3bucket/scen-train/inputs/ -o s3://home-steward-s3bucket/scen-train/outputs  -t true  > train_log.out &
+# TEST -> nohup ./run.sh -i s3://home-steward-s3bucket/scen-test/inputs/ -o s3://home-steward-s3bucket/scen-test/outputs  -t false -c s3://home-steward-s3bucket/scen-train/outputs/PPO_003_204cc_00000_0_framework=torch_2023-03-14_21-56-51/checkpoint_000001/ > test_log.out &
 
 Help()
 {
