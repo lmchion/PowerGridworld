@@ -1,22 +1,19 @@
 """Script for running single-machine training.  If you want to run rllib on a 
 cluster see, e.g., https://docs.ray.io/en/latest/cluster/deploy.html."""
+import json
 import sys
-
-
+import time
+from collections import OrderedDict
 
 import ray
+from callbacks import HSAgentTrainingCallback, HSDataLoggerCallback
 from ray import tune
-
+from ray.air.checkpoint import Checkpoint
 from ray.tune.registry import register_env
 
 from gridworld.log import logger
 from gridworld.scenarios.heterogeneous_hs import make_env_config
-import json,time
-from collections import OrderedDict
 
-from callbacks import HSAgentTrainingCallback, HSDataLoggerCallback
-
-from ray.air.checkpoint import Checkpoint        
 
 def env_creator(config: dict):
     """Simple wrapper that takes a config dict and returns an env instance."""
@@ -49,7 +46,7 @@ def main(**args):
     # Create the env configuration with option to change max episode steps
     # for debugging.
     with open(args["input_dir"]+'/'+args["input_file_name"], 'r') as f:
-         env_config = json.load(f)
+        env_config = json.load(f)
 
     env_config = make_env_config(env_config)
     env_config.update({"max_episode_steps": args["max_episode_steps"]})
@@ -66,6 +63,8 @@ def main(**args):
     # Collect params related to train batch size and resources.
     rollout_fragment_length = env.max_episode_steps
     num_workers = args["num_cpus"]
+    scenario_id = args["scenario_id"]
+
 
     # Set any stopping conditions.
     stop = {
@@ -114,7 +113,7 @@ def main(**args):
         checkpoint_score_attr="episode_reward_mean",
         keep_checkpoints_num=100,
         stop=stop,
-        callbacks=[HSDataLoggerCallback()],
+        callbacks=[HSDataLoggerCallback(scenario_id)],
         restore=checkpoint,
         config={
             "env": env_name,

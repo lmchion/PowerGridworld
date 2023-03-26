@@ -2,22 +2,14 @@
 cluster see, e.g., https://docs.ray.io/en/latest/cluster/deploy.html."""
 import json
 
-
-
 import ray
+from callbacks import HSAgentTrainingCallback, HSDataLoggerCallback
 from ray import tune
-
 from ray.tune.registry import register_env
 
 from gridworld.log import logger
 from gridworld.scenarios.heterogeneous_hs import make_env_config
-import json
-from collections import OrderedDict
-from itertools import permutations,cycle, islice
-import random
-from callbacks import HSAgentTrainingCallback, HSDataLoggerCallback
 
-        
 
 def env_creator(config: dict):
     """Simple wrapper that takes a config dict and returns an env instance."""
@@ -42,6 +34,7 @@ def main(**args):
 
 
     last_checkpoint=args["last_checkpoint"]
+    scenario_id = args["scenario_id"]
 
     for env in list(map.keys()):
         print("env",env)
@@ -54,7 +47,10 @@ def main(**args):
 
         # Create the env configuration with option to change max episode steps
         # for debugging.
-        env_config = make_env_config(args["input_dir"]+'/'+ env +'.json')
+        with open(args["input_dir"]+'/'+ env +'.json', 'r') as f:
+            env_config = json.load(f)
+
+        env_config = make_env_config(env_config)
         env_config.update({"max_episode_steps": args["max_episode_steps"]})
 
         logger.info("ENV CONFIG", env_config)
@@ -120,7 +116,7 @@ def main(**args):
             checkpoint_score_attr="episode_reward_mean",
             keep_checkpoints_num=100,
             stop=stop,
-            callbacks=[HSDataLoggerCallback()],
+            callbacks=[HSDataLoggerCallback(scenario_id)],
             config={
                 "env": env_name,
                 "env_config": env_config,

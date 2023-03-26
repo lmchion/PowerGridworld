@@ -1,12 +1,12 @@
 
 
-import os,re
+import json
+import os
+import random
+import re
 import subprocess
-from itertools import permutations,cycle, islice
-import random, json
 import time
-
-
+from itertools import cycle, islice, permutations
 
 
 def main(**args):
@@ -42,6 +42,7 @@ def main(**args):
                                          '--input-dir',args['input_dir'],
                                          '--input-file-name',str(env)+'.json',
                                          '--last-checkpoint',str(last_checkpoint),
+                                        '--scenario-id',env,
                                          ],
                                             cwd=directory, capture_output=True)
             print(proc)
