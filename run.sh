@@ -4,7 +4,7 @@
 #!/usr/bin/bash
 # 
 # TRAIN -> ./run.sh -i s3://home-steward-s3bucket/scen-train/inputs/ -o s3://home-steward-s3bucket/scen-train/outputs  -t true
-# TEST -> ./run.sh -i s3://home-steward-s3bucket/scen-test/inputs/ -o s3://home-steward-s3bucket/scen-test/outputs  -t true -c s3://home-steward-s3bucket/scen-train/outputs/PPO_003_204cc_00000_0_framework=torch_2023-03-14_21-56-51/checkpoint_000001/
+# TEST -> ./run.sh -i s3://home-steward-s3bucket/scen-test/inputs/ -o s3://home-steward-s3bucket/scen-test/outputs  -t false -c s3://home-steward-s3bucket/scen-train/outputs/PPO_003_204cc_00000_0_framework=torch_2023-03-14_21-56-51/checkpoint_000001/
 
 Help()
 {
@@ -46,9 +46,9 @@ done
 echo "building docker container"
 aws s3 cp $infolder data/inputs --recursive
 
-sudo rm -rf data/outputs/*
+sudo rm -rf $(pwd)/data/outputs/ray_results/PPO/*
 
-wait 20
+wait 10
 
 echo "building docker container"
 sudo docker build . -t homesteward:latest  # RUn Dockerfile

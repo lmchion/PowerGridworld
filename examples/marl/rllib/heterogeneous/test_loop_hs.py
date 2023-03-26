@@ -48,9 +48,10 @@ def main(**args):
     with open(args["input_dir"]+ '/map.json', 'r') as f:
         map = json.load(f)
 
+    iters={}
 
-
-    for env in list(map.keys()):
+    for num,env in enumerate(list(map.keys())):
+        iters[num]=env
         print("env",env)
         timeStarted = time.time()  
         proc = subprocess.run(['python','-u','test_hs.py', 
@@ -69,6 +70,14 @@ def main(**args):
         print(proc)
         timeDelta = time.time() - timeStarted                     # Get execution time.
         logger.info("Finished "+env+" process in "+str(timeDelta)+" seconds.") 
+        
+        output_dir='/'.join(args["last_checkpoint"].split('/')[:-2])
+
+        last_checkpoint = re.search('local_path=(.*)\)\\n', str(proc.stdout, 'UTF-8') )
+        last_checkpoint=last_checkpoint.group(1)
+
+        with open(output_dir+'/current_iteration.json', 'w') as f:
+            json.dump(iters, f)
 
         logger.info("Uploading data...") 
         current_result_dir = osp.join(args["local_dir"], "PPO")

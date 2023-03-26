@@ -1,12 +1,12 @@
 
 
+import glob
 import json
 import os
 import random
 import re
 import subprocess
 import time
-from itertools import cycle, islice, permutations
 
 
 def main(**args):
@@ -21,7 +21,7 @@ def main(**args):
     #random.shuffle(perm)
  
     #perm = list(islice(cycle(list(perm)), args["stop_iters"]))
-
+    iters={}
     last_checkpoint=None
     env_set=list(map.keys())
 
@@ -29,6 +29,7 @@ def main(**args):
         print("iteration",i+1)
         random.shuffle(env_set)
         print("env_set",env_set)
+        iters[i]=env_set
         for env in env_set:
             print("env",env)
             timeStarted = time.time()  
@@ -45,27 +46,36 @@ def main(**args):
                                         '--scenario-id',env,
                                          ],
                                             cwd=directory, capture_output=True)
-            print(proc)
+
             timeDelta = time.time() - timeStarted                     # Get execution time.
             print("Finished "+env+" process in "+str(timeDelta)+" seconds.") 
 
             if last_checkpoint!=None:
-                del_dir = subprocess.run(['rm','-rf','/'.join(last_checkpoint.split('/')[:-1]) ])
+                prior_run_dir='/'.join(last_checkpoint.split('/')[:-1])
+                output_dir='/'.join(last_checkpoint.split('/')[:-2])
+                del_dir = subprocess.run(['rm','-rf',prior_run_dir ])
                 #print(del_dir)
-                del_dir = subprocess.run(['rm','-rf','/'.join(last_checkpoint.split('/')[:-2])+'/basic-variant-state-'+run_date+'.json'])
+                for f in glob.glob( output_dir+"/*"+run_date[:-2]+"*.json"):
+                    os.remove(f)
+
+                #del_dir = subprocess.run(['rm','-rf',output_dir+'/basic-variant-state-'+run_date+'.json'])
                 #print(del_dir)
-                del_dir = subprocess.run(['rm','-rf','/'.join(last_checkpoint.split('/')[:-2])+'/experiment_state-'+run_date+'.json'])
+                #del_dir = subprocess.run(['rm','-rf',output_dir+'/experiment_state-'+run_date+'.json'])
                 #print(del_dir)
+
 
 
             last_checkpoint = re.search('local_path=(.*)\)\\n', str(proc.stdout, 'UTF-8') )
             last_checkpoint=last_checkpoint.group(1)
             run_date = re.search('=torch_(.*)/checkpoint', last_checkpoint )
+            
             run_date=run_date.group(1)
+
 
             print('last_checkpoint',last_checkpoint)
 
-
+        with open(output_dir+'/current_iteration.json', 'w') as f:
+            json.dump(iters, f)
 
         
 if __name__ == "__main__":
