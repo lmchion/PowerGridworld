@@ -3,6 +3,7 @@ import csv
 import json
 import os
 import os.path as osp
+import re
 import subprocess
 import time
 
@@ -71,13 +72,13 @@ def main(**args):
         timeDelta = time.time() - timeStarted                     # Get execution time.
         logger.info("Finished "+env+" process in "+str(timeDelta)+" seconds.") 
         
-        output_dir='/'.join(args["last_checkpoint"].split('/')[:-2])
+        # output_dir='/'.join(args["last_checkpoint"].split('/')[:-2])
 
-        last_checkpoint = re.search('local_path=(.*)\)\\n', str(proc.stdout, 'UTF-8') )
-        last_checkpoint=last_checkpoint.group(1)
+        # last_checkpoint = re.search('local_path=(.*)\)\\n', str(proc.stdout, 'UTF-8') )
+        # last_checkpoint=last_checkpoint.group(1)
 
-        with open(output_dir+'/current_iteration.json', 'w') as f:
-            json.dump(iters, f)
+        # with open(output_dir+'/current_iteration.json', 'w') as f:
+        #     json.dump(iters, f)
 
         logger.info("Uploading data...") 
         current_result_dir = osp.join(args["local_dir"], "PPO")
