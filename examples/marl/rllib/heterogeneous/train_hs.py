@@ -110,7 +110,7 @@ def main(**args):
     experiment = tune.run(
         args["run"],
         local_dir=args["local_dir"],
-        checkpoint_freq=1,
+        checkpoint_freq=1000,
         checkpoint_at_end=True,
         checkpoint_score_attr="episode_reward_mean",
         keep_checkpoints_num=1,

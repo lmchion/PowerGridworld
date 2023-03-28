@@ -25,6 +25,7 @@ def main(**args):
     last_checkpoint=None
     env_set=list(map.keys())
 
+    cnt=0
     iter_set=int(args["stop_iters"])/int(args["training_iteration"])
     for n1,i in enumerate(range(0,int(iter_set))):
         print("iteration set",i+1)
@@ -34,6 +35,9 @@ def main(**args):
         for n2,env in enumerate(env_set):
             print("env",env)
             timeStarted = time.time()  
+            cnt +=1
+            training_iteration=int(int(args["training_iteration"])*cnt)
+            print("training_iteration",training_iteration,args["training_iteration"],cnt )
             proc = subprocess.run(['python','-u','train_hs.py', 
                                          '--stop-iters',str(args["stop_iters"]), 
                                          '--stop-reward',str(args["stop_reward"]), 
@@ -44,7 +48,7 @@ def main(**args):
                                          '--input-dir',args['input_dir'],
                                          '--input-file-name',str(env)+'.json',
                                          '--last-checkpoint',str(last_checkpoint),
-                                         '--training-iteration',str(args["training_iteration"]*(n1+1)*(n2+1)),
+                                         '--training-iteration',str(training_iteration),
                                         '--scenario-id',env,
                                          ],
                                             cwd=directory, capture_output=True)
