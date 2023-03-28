@@ -72,6 +72,7 @@ echo "Status code of Home Steward Training: ${status_code}"
 #to check inside the container
 #sudo docker run -v $(pwd)/data/outputs:/PowerGridworld/data/outputs --name hscontainer -it  -d homesteward:latest
 #docker exec -it hscontainer /bin/bash
+#docker run --name hscontainer --gpus all nvidia/cuda -it  -d homesteward:latest
 
 aws s3 cp data/outputs/ray_results/PPO $outfolder --recursive
 

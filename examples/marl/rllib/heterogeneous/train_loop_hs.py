@@ -26,12 +26,12 @@ def main(**args):
     env_set=list(map.keys())
 
     iter_set=int(args["stop_iters"])/int(args["training_iteration"])
-    for i in range(0,int(iter_set)):
+    for n1,i in enumerate(range(0,int(iter_set))):
         print("iteration set",i+1)
         random.shuffle(env_set)
         print("env_set",env_set)
         iters[i]=env_set
-        for env in env_set:
+        for n2,env in enumerate(env_set):
             print("env",env)
             timeStarted = time.time()  
             proc = subprocess.run(['python','-u','train_hs.py', 
@@ -44,7 +44,7 @@ def main(**args):
                                          '--input-dir',args['input_dir'],
                                          '--input-file-name',str(env)+'.json',
                                          '--last-checkpoint',str(last_checkpoint),
-                                         '--training-iteration',str(args["training_iteration"]),
+                                         '--training-iteration',str(args["training_iteration"]*(n1+1)*(n2+1)),
                                         '--scenario-id',env,
                                          ],
                                             cwd=directory, capture_output=True)

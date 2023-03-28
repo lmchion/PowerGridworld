@@ -110,14 +110,14 @@ def main(**args):
     experiment = tune.run(
         args["run"],
         local_dir=args["local_dir"],
-        checkpoint_freq=100,
+        checkpoint_freq=1,
         checkpoint_at_end=True,
         checkpoint_score_attr="episode_reward_mean",
-        keep_checkpoints_num=100,
+        keep_checkpoints_num=1,
         stop=stop,
         callbacks=[HSDataLoggerCallback(scenario_id)],
         restore=checkpoint,
-        resume="AUTO",
+        #resume="AUTO",
         config={
             "env": env_name,
             "env_config": env_config,
@@ -149,15 +149,17 @@ def main(**args):
     # while (ray.global_state.cluster_resources() !=
     #    ray.global_state.available_resources()):
     #     time.sleep(1)
-    start=time.time()
-    while (experiment.get_best_logdir("training_iteration", mode="max") not in experiment.trial_dataframes.keys() or  ):
-        print("waiting")
-        time.sleep(1)
+    # start=time.time()
+    # while (experiment.get_best_logdir("training_iteration", mode="max") not in experiment.trial_dataframes.keys() ): # and time.time()-start < 2*60 ):
+    #     print("waiting")
+    #     time.sleep(1)
+    #ray.shutdown(_exiting_interpreter= False)
 
     last_checkpoint=experiment.get_last_checkpoint()
     return(last_checkpoint)
 
     
+
 
 if __name__ == "__main__":
 

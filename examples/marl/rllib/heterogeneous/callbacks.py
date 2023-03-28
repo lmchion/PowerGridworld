@@ -84,10 +84,10 @@ class HSDataLoggerCallback(LoggerCallback):
 
         junk1 = osp.join(trial.logdir, "progress.csv")
         junk2 = osp.join(trial.logdir, "result.json")
-        if os.path.exists(junk1):
-            os.remove(junk1)
-        if os.path.exists(junk2):
-            os.remove(junk2)  
+        #if os.path.exists(junk1):
+        #    os.remove(junk1)
+        #if os.path.exists(junk2):
+        #    os.remove(junk2)  
 
 
     def on_experiment_end(self, trials, **info):
