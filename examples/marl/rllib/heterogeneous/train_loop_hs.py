@@ -57,8 +57,7 @@ def main(**args):
             print("Finished "+env+" process in "+str(timeDelta)+" seconds.") 
 
             if last_checkpoint!=None:
-                prior_run_dir='/'.join(last_checkpoint.split('/')[:-1])
-                output_dir='/'.join(last_checkpoint.split('/')[:-2])
+
                 del_dir = subprocess.run(['rm','-rf',prior_run_dir ])
                 print(del_dir)
                 for f in glob.glob( output_dir+"/*"+run_date[:-2]+"*.json"):
@@ -74,9 +73,9 @@ def main(**args):
             last_checkpoint = re.search('local_path=(.*)\)\\n', str(proc.stdout, 'UTF-8') )
             last_checkpoint=last_checkpoint.group(1)
             run_date = re.search('=torch_(.*)/checkpoint', last_checkpoint )
-            
             run_date=run_date.group(1)
-
+            prior_run_dir='/'.join(last_checkpoint.split('/')[:-1])
+            output_dir='/'.join(last_checkpoint.split('/')[:-2])
 
             print('last_checkpoint',last_checkpoint)
 
