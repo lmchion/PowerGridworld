@@ -59,15 +59,15 @@ def main(**args):
             if last_checkpoint!=None:
                 prior_run_dir='/'.join(last_checkpoint.split('/')[:-1])
                 output_dir='/'.join(last_checkpoint.split('/')[:-2])
-                #del_dir = subprocess.run(['rm','-rf',prior_run_dir ])
-                #print(del_dir)
-                #for f in glob.glob( output_dir+"/*"+run_date[:-2]+"*.json"):
-                #    os.remove(f)
+                del_dir = subprocess.run(['rm','-rf',prior_run_dir ])
+                print(del_dir)
+                for f in glob.glob( output_dir+"/*"+run_date[:-2]+"*.json"):
+                   os.remove(f)
 
-                #del_dir = subprocess.run(['rm','-rf',output_dir+'/basic-variant-state-'+run_date+'.json'])
-                #print(del_dir)
-                #del_dir = subprocess.run(['rm','-rf',output_dir+'/experiment_state-'+run_date+'.json'])
-                #print(del_dir)
+                # del_dir = subprocess.run(['rm','-rf',output_dir+'/basic-variant-state-'+run_date+'.json'])
+                # print(del_dir)
+                # del_dir = subprocess.run(['rm','-rf',output_dir+'/experiment_state-'+run_date+'.json'])
+                # print(del_dir)
 
 
 

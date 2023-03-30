@@ -6,7 +6,7 @@
 #
 # If running on VPN on MacOS, add the additional argument for train.py:
 #    --node-ip-address $(ipconfig getifaddr en0)
-
+# TRAIN LOCALLY -> nohup ./examples/marl/rllib/heterogeneous/train_hs.sh   -l true  > train_loc_log.out &
 Help()
 {
    # Display Help
@@ -44,14 +44,14 @@ then
     cd ~/PowerGridworld
     sudo rm -rf $(pwd)/data/outputs/ray_results/PPO/*
     python3 -u $(pwd)/examples/marl/rllib/heterogeneous/train_loop_hs.py \
-        --stop-iters 150 \
+        --stop-iters 200 \
         --stop-reward -0.5 \
         --num-cpus 1 \
         --num-gpus 0 \
         --local-dir $(pwd)/data/outputs/ray_results \
         --max-episode-steps 288 \
         --input-dir $(pwd)/data/inputs \
-        --training-iteration 50
+        --training-iteration 100
         
 else
     cd /PowerGridworld
