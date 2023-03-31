@@ -31,6 +31,7 @@ class HSAgentTrainingCallback(DefaultCallbacks):
         episode.media["episode_data"] = []
         self._total_episode_cost = 0.0
         self._total_datapoints = 0
+        self._total_timestamps = 0
 
     def on_episode_step(
         self, *, worker : RolloutWorker, base_env : BaseEnv, episode : EpisodeV2 , env_index : int, **kwargs
@@ -47,7 +48,7 @@ class HSAgentTrainingCallback(DefaultCallbacks):
         hvac_power = ep_lastinfo.get('hvac_power', None)
         other_power = ep_lastinfo.get('other_power', None)
         total_cost = 0
-
+        timestamp=None
         for step_meta_item in step_meta:
             episode.media["episode_data"].append([step_meta_item["device_id"], 
                                                   step_meta_item["timestamp"], 
@@ -63,10 +64,15 @@ class HSAgentTrainingCallback(DefaultCallbacks):
                                                   other_power,
                                                   step_meta_item["device_custom_info"]])
             self._total_episode_cost += step_meta_item["cost"]
+
+            if timestamp!=step_meta_item["timestamp"]:
+                timestamp=step_meta_item["timestamp"]
+                self._total_timestamps +=1
+
             self._total_datapoints += 1
 
     def on_episode_end(self, *, worker, base_env, policies, episode, env_index, **kwargs) -> None:
-        episode.custom_metrics["total_cost"] = self._total_episode_cost / self._total_datapoints * 287
+        episode.custom_metrics["total_cost"] = self._total_episode_cost*self._total_timestamps / self._total_datapoints 
 
 class HSDataLoggerCallback(LoggerCallback):
     def __init__(self, scenario_id):

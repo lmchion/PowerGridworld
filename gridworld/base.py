@@ -10,6 +10,8 @@ import random
 from gridworld.log import logger
 from gymnasium.envs.registration import EnvSpec
 
+from gymnasium.utils import seeding
+
 class ComponentEnv(gym.Env, ABC):
     """Base class for any environment used in the multiagent simulation."""
 
@@ -186,4 +188,9 @@ class MultiComponentEnv(ComponentEnv):
     @property
     def env_dict(self) -> Dict[str, ComponentEnv]:
         return {e.name: e for e in self.envs}
+    
+    @property
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]
 

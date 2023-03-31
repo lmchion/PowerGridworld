@@ -205,5 +205,5 @@ class HSMultiComponentEnv(MultiComponentEnv):
         """The episode is done when the end of the data is reached."""
         return self.done
     
-    def seed(self,seed : int ):
-        return self.action_space.seed(seed)
+    # def seed(self,seed : int ):
+    #     return self.action_space.seed(seed)
