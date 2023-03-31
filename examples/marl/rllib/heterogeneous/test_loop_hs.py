@@ -63,7 +63,6 @@ def main(**args):
                                         '--local-dir',args["local_dir"],
                                         '--max-episode-steps',str(args['max_episode_steps']),
                                         '--input-dir',args['input_dir'],
-                                        '--input-file-name',str(env)+'.json',
                                         '--last-checkpoint',args["last_checkpoint"],
                                         '--scenario-id',env,
                                         ],

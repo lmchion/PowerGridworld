@@ -27,7 +27,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
             end_time: str = '',
             control_timedelta=pd.Timedelta(300, "s"),
             max_grid_power: float = 48,
-            max_episode_steps: int = None,
+            max_episode_steps: int = 288,
             rescale_spaces: bool = True,
             **kwargs
     ):
@@ -36,7 +36,10 @@ class HSMultiComponentEnv(MultiComponentEnv):
 
         #super().__init__(name=common_config.name, components=env_config.components, **kwargs)
 
-        super().__init__(name=name, components=components, **kwargs)
+       
+       
+
+        super().__init__(name=name, components=components, max_episode_steps=max_episode_steps, **kwargs)
 
         self.rescale_spaces = rescale_spaces
 
@@ -201,3 +204,6 @@ class HSMultiComponentEnv(MultiComponentEnv):
     def is_terminal(self):
         """The episode is done when the end of the data is reached."""
         return self.done
+    
+    def seed(self,seed : int ):
+        return self.action_space.seed(seed)

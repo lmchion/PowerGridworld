@@ -14,15 +14,22 @@ from ray.cluster_utils import Cluster
 
 from gridworld.log import logger
 from gridworld.scenarios.heterogeneous_hs import make_env_config
+import gymnasium as gym
+
 
 
 def env_creator(config: dict):
     """Simple wrapper that takes a config dict and returns an env instance."""
     
-    from gridworld import HSMultiComponentEnv
+    
+    gym.register(id=config['name']+'-v0',
+                          entry_point='gridworld.base_hs:HSMultiComponentEnv',
+                          max_episode_steps=config['max_episode_steps']
+                         )
+    env = gym.make( id='gridworld.base_hs:'+config['name']+'-v0',**config )
+    #env.action_space.seed(123)
 
-    return HSMultiComponentEnv(**config)
-
+    return env
 
 def main(**args):
 
@@ -41,17 +48,16 @@ def main(**args):
         checkpoint=None
             
     # Register the environment.
-    #env_name = args["env_name"]
-    env_name = args["input_file_name"].split('.')[0]
+    env_name = args["scenario_id"]
     register_env(env_name, env_creator)
 
     # Create the env configuration with option to change max episode steps
     # for debugging.
-    with open(args["input_dir"]+'/'+args["input_file_name"], 'r') as f:
+    with open(args["input_dir"]+'/'+ str(env_name) +'.json', 'r') as f:
         env_config = json.load(f)
 
     env_config = make_env_config(env_config)
-    env_config.update({"max_episode_steps": args["max_episode_steps"]})
+    #env_config.update({"max_episode_steps": args["max_episode_steps"]})
 
     logger.info("ENV CONFIG", env_config)
 
@@ -72,7 +78,8 @@ def main(**args):
     stop = {
         #'training_iteration': args["stop_iters"],
         'training_iteration': int(args["training_iteration"]),
-        'timesteps_total': int(args["stop_timesteps"]),
+       # 'timesteps_total': int(args["training_iteration"]),
+        # 'max_episode_steps' : int(args["stop_timesteps"]),
         'episode_reward_mean': float(args["stop_reward"])
     }
 
@@ -113,7 +120,7 @@ def main(**args):
         checkpoint_freq=1000,
         checkpoint_at_end=True,
         checkpoint_score_attr="episode_reward_mean",
-        keep_checkpoints_num=1,
+        keep_checkpoints_num=100,
         stop=stop,
         callbacks=[HSDataLoggerCallback(scenario_id)],
         restore=checkpoint,
@@ -123,6 +130,7 @@ def main(**args):
             "env_config": env_config,
             "num_gpus": args["num_gpus"],
             "num_workers": num_workers,
+            "horizon" : rollout_fragment_length,
             "callbacks": HSAgentTrainingCallback,
             # "multiagent": {
             #     "policies": {
@@ -140,7 +148,7 @@ def main(**args):
         verbose=0
     )
 
-    dir(experiment)
+    #dir(experiment)
     # not_ready=[]
     # while len(not_ready)==0:
     #     ready, not_ready = ray.wait([env])

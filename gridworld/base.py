@@ -5,9 +5,10 @@ from typing import Dict, List, Tuple
 
 import gymnasium as gym
 import numpy as np
+import random
 
 from gridworld.log import logger
-
+from gymnasium.envs.registration import EnvSpec
 
 class ComponentEnv(gym.Env, ABC):
     """Base class for any environment used in the multiagent simulation."""
@@ -23,6 +24,7 @@ class ComponentEnv(gym.Env, ABC):
         self._real_power = 0.
         self._reactive_power = 0.
         self._obs_labels = []
+
 
 
     @abstractmethod
@@ -71,6 +73,8 @@ class ComponentEnv(gym.Env, ABC):
         return self._obs_labels
 
 
+
+
 class MultiComponentEnv(ComponentEnv):
     """Class for creating a single Gym environment from multiple component 
     environments.  The action and observation spaces of the multi-component env
@@ -81,9 +85,11 @@ class MultiComponentEnv(ComponentEnv):
             self, 
             name: str = None,
             components: List[dict] = None,
+            max_episode_steps: int = None,
             **kwargs
         ):
-
+       
+    
         super().__init__(name=name, **kwargs)
         
         self.envs = []
@@ -180,3 +186,4 @@ class MultiComponentEnv(ComponentEnv):
     @property
     def env_dict(self) -> Dict[str, ComponentEnv]:
         return {e.name: e for e in self.envs}
+

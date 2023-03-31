@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
 from ray.rllib.env import BaseEnv
-from ray.rllib.evaluation import Episode, RolloutWorker
+from ray.rllib.evaluation import  RolloutWorker
+from ray.rllib.evaluation.episode_v2 import EpisodeV2 
 from ray.rllib.policy import Policy
 from ray.tune.logger import LoggerCallback
 
@@ -24,7 +25,7 @@ class HSAgentTrainingCallback(DefaultCallbacks):
 
     def on_episode_start(
         self, *, worker : RolloutWorker, base_env : BaseEnv, 
-        policies: Dict[str, Policy], episode : Episode , env_index : int, **kwargs
+        policies: Dict[str, Policy], episode : EpisodeV2 , env_index : int, **kwargs
     ):
         #episode.user_data["episode_data"] = defaultdict(list)
         episode.media["episode_data"] = []
@@ -32,11 +33,13 @@ class HSAgentTrainingCallback(DefaultCallbacks):
         self._total_datapoints = 0
 
     def on_episode_step(
-        self, *, worker : RolloutWorker, base_env : BaseEnv, episode : Episode , env_index : int, **kwargs
+        self, *, worker : RolloutWorker, base_env : BaseEnv, episode : EpisodeV2 , env_index : int, **kwargs
     ):
-        agents = episode.get_agents()
-        ep_lastinfo = episode._last_infos[agents[-1]]
+        #agents = episode.get_agents()
+        #ep_lastinfo = episode._last_infos[agents[-1]]
 
+        last_agent = max(episode._agent_to_index)
+        ep_lastinfo = episode._last_infos[last_agent]
 
         step_meta = ep_lastinfo.get('step_meta', None)
         grid_cost = ep_lastinfo.get('grid_cost', None)

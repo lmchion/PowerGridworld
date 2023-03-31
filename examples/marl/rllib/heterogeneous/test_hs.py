@@ -9,15 +9,19 @@ from ray.tune.registry import register_env
 
 from gridworld.log import logger
 from gridworld.scenarios.heterogeneous_hs import make_env_config
-
+import gymnasium as gym
 
 def env_creator(config: dict):
     """Simple wrapper that takes a config dict and returns an env instance."""
     
-    from gridworld import HSMultiComponentEnv
+    gym.envs.register(id=config['name']+'-v0',
+                          entry_point='gridworld.base_hs:HSMultiComponentEnv',
+                          max_episode_steps=config['max_episode_steps']
+                         )
+    env = gym.make( id='gridworld.base_hs:'+config['name']+'-v0',**config )
+    env.action_space.seed(123)
 
-    return HSMultiComponentEnv(**config)
-
+    return env
 
 def main(**args):
 
