@@ -59,12 +59,16 @@ class HSMultiComponentEnv(MultiComponentEnv):
         
         self.meta_state = { 'timestamp': None,
                             'grid_cost': None,
+                            'max_grid_cost': 0.57098, 
                            'es_cost': 0.0,
                            'grid_power': self.max_grid_power,
-                           'pv_power': None,
+                           'pv_power': 0.0,
                            'es_power': 0.0,
                            'pv_cost': 0.0,
-                           'step_meta': None
+                           'step_meta': None,
+                           'es_power_consumed': 0.0,
+                            'solar_power_consumed': 0.0,
+                            'grid_power_consumed': 0.0,
                            }
         
         #self._obs_labels = self._obs_labels +['grid_cost']
@@ -107,7 +111,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         # Loop over envs and create the observation dict (of dicts).
         for env in self.envs:
             env_kwargs = {k: v for k,
-                          v in kwargs.items() if k in env.obs_labels}
+                          v in kwargs.items() if k in env._obs_labels}
             env_kwargs.update(kwargs)
             obs[env.name], meta[env.name] = env.get_obs(**env_kwargs)
 

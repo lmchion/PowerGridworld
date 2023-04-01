@@ -51,7 +51,13 @@ def main(**args):
                                         '--scenario-id',env,
                                          ],
                                             cwd=directory, capture_output=True)
-            print(proc)
+            out_lines = proc.stdout.splitlines()
+            err_lines = proc.stderr.splitlines()
+            print("\n\nOUT ::: ")
+            print(*out_lines, sep='\n')
+            print("\n\nERROR ::: ")
+            print(*err_lines, sep='\n')
+
             timeDelta = time.time() - timeStarted                     # Get execution time.
             print("Finished "+env+" process in "+str(timeDelta)+" seconds.") 
 

@@ -2,10 +2,9 @@
 import os
 import time
 
+import gymnasium as gym
 import numpy as np
 import pandas as pd
-
-import gymnasium as gym
 
 from gridworld import ComponentEnv
 from gridworld.log import logger
@@ -78,26 +77,26 @@ class HSPVEnv(ComponentEnv):
             self.episode_length = min(max_episode_steps, self.episode_length)
 
         # Create the obs labels and bounds.
-        self._obs_labels = ["real_power"]
+        self._obs_labels = ["pv_power"]
         self._obs_labels += ["min_voltage"] if grid_aware else []
 
         obs_bounds = {
-            "real_power": (-np.max(self.data), 0.),
+            "pv_power": (-np.max(self.data), 0.),
             "min_voltage": (0.9, 1.1)
         }
 
         # Create the optionally rescaled gym spaces.
         self._observation_space = gym.spaces.Box(
-            shape=(len(self.obs_labels),),
-            low=np.array([v[0] for k, v in obs_bounds.items() if k in self.obs_labels]),
-            high=np.array([v[1] for k, v in obs_bounds.items() if k in self.obs_labels]),
+            shape=(len(self._obs_labels),),
+            low=np.array([v[0] for k, v in obs_bounds.items() if k in self._obs_labels]),
+            high=np.array([v[1] for k, v in obs_bounds.items() if k in self._obs_labels]),
             dtype=np.float64)
 
         self.observation_space = maybe_rescale_box_space(
             self._observation_space, rescale=self.rescale_spaces)
 
         self._action_space = gym.spaces.Box(
-            shape=(1,), low=0.98, high=1., dtype=np.float64)
+            shape=(1,), low=0.0, high=1., dtype=np.float64)
 
         self.action_space = maybe_rescale_box_space(
             self._action_space, rescale=self.rescale_spaces)
@@ -117,9 +116,9 @@ class HSPVEnv(ComponentEnv):
         else:
             obs = raw_obs
         
-        meta= {"real_power": -raw_obs[0]}
+        meta= {"pv_power": -raw_obs[0]}
         
-        meta['pv_power']=meta['real_power']
+        #meta['pv_power']=meta['real_power']
 
         kwargs.update(meta)
       
@@ -144,16 +143,16 @@ class HSPVEnv(ComponentEnv):
         # the last obs) what the max power output is, and can react accordingly.
         obs, obs_meta = self.get_obs(**kwargs)
 
-        self._real_power = np.float64((action * obs_meta["real_power"]).squeeze())
+        self._real_power = np.float64((action * obs_meta["pv_power"]).squeeze())
         self.index += 1
         rew, rew_meta = self.step_reward(**kwargs)
 
         rew_meta['pv_power']=self._real_power 
         rew_meta['step_meta']['action'] = action.tolist()
-        rew_meta['step_meta']['solar_power_consumed'] = obs_meta["real_power"]
+        rew_meta['step_meta']['solar_power_consumed'] = 0
         rew_meta['step_meta']['es_power_consumed'] = 0
         rew_meta['step_meta']['grid_power_consumed'] = 0
-        rew_meta['step_meta']['device_custom_info'] = {'pv_available_power': obs_meta["real_power"], 'pv_actionable_power': self._real_power}
+        rew_meta['step_meta']['device_custom_info'] = {'pv_available_power': obs_meta["pv_power"], 'pv_actionable_power': self._real_power}
 
         obs_meta.update(rew_meta)
         return obs, rew, self.is_terminal(), False, obs_meta

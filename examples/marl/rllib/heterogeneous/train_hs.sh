@@ -41,17 +41,17 @@ echo "running locally" $run_locally
 
 if [ "$run_locally"  = "true" ]
 then
-    cd ~/PowerGridworld
-    sudo rm -rf $(pwd)/data/outputs/ray_results/PPO/*
+    cd /home/rakesh/mids/210/PowerGridworld
+    rm -rf /media/rakesh/storage-partitio/data/outputs/ray_results/PPO/*
     python3 -u $(pwd)/examples/marl/rllib/heterogeneous/train_loop_hs.py \
-        --stop-iters 1000 \
+        --stop-iters  200 \
         --stop-reward -0.5 \
-        --num-cpus 0 \
-        --num-gpus 1 \
-        --local-dir $(pwd)/data/outputs/ray_results \
+        --num-cpus 8 \
+        --num-gpus 0 \
+        --local-dir /media/rakesh/storage-partitio/data/outputs/ray_results \
         --max-episode-steps 288 \
-        --input-dir $(pwd)/data/inputs \
-        --training-iteration 1000
+        --input-dir /media/rakesh/storage-partitio/data/inputs \
+        --training-iteration 200
         
 else
     cd /PowerGridworld

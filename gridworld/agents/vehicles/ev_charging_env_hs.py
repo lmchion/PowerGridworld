@@ -93,6 +93,18 @@ class HSEVChargingEnv(ComponentEnv):
                 0, self._df["energy_required_kwh"].max()),
             "current_cost" : (
                 0, max_charge_cost),
+            "ev_pv_power_available" : (
+                0, 3.6), 
+            "ev_pv_power_consumed" : (
+                0, 3.6), 
+            "ev_es_power_available" : (
+                0, 12.0), 
+            "ev_es_power_consumed" : (
+                0, max_charge_rate_kw), 
+            "ev_grid_power_available" : (
+                0, 48.0), 
+            "ev_grid_power_consumed" : (
+                0, max_charge_rate_kw)
         })
 
         # Construct the gym spaces.
@@ -170,7 +182,7 @@ class HSEVChargingEnv(ComponentEnv):
 
         step_meta = {}
 
-        reward = -(step_cost + kwargs['grid_cost'] * self.state["real_power_unserved"])
+        reward = -(step_cost + kwargs['max_grid_cost'] * self.state["real_power_unserved"])
         
         step_meta["device_id"] = self.name
         step_meta["timestamp"] = kwargs['timestamp']
@@ -303,16 +315,29 @@ class HSEVChargingEnv(ComponentEnv):
             kwargs['es_power']=max(0.0, battery_capacity-battery_power_consumed)
             kwargs['grid_power']=max(0.0, grid_capacity-grid_power_consumed)
 
+            kwargs['es_power_consumed']=battery_power_consumed
+            kwargs['solar_power_consumed']=solar_power_consumed
+            kwargs['grid_power_consumed']=grid_power_consumed
+
+        # Update Observation space with availability and consumption information.
+        # attach values to observation here
         self._update("current_cost", self.current_cost)
+        self._update("ev_pv_power_available", kwargs['pv_power'])
+        self._update("ev_pv_power_consumed", solar_power_consumed)
+        self._update("ev_es_power_available", kwargs['es_power'])
+        self._update("ev_es_power_consumed", battery_power_consumed)
+        self._update("ev_grid_power_available", kwargs['grid_power'])
+        self._update("ev_grid_power_consumed", grid_power_consumed)
 
         # Get the return values
         obs, meta = self.get_obs(**kwargs)
+
         rew, rew_meta = self.step_reward(**kwargs)
         rew_meta['step_meta']['action'] = action.tolist()
         rew_meta['step_meta']['solar_power_consumed'] = solar_power_consumed
         rew_meta['step_meta']['es_power_consumed'] = battery_power_consumed
         rew_meta['step_meta']['grid_power_consumed'] = grid_power_consumed
-        rew_meta['step_meta']['device_custom_info'] = {'power_ask': power , 'power_unserved': unserved, 'charging_vehicle':len(self.charging_vehicles), 'vehicle_charged': len(self.departed_vehicles), 'solar_power_available': solar_capacity-solar_power_consumed, 'es_power_available':battery_capacity-battery_power_consumed, 'grid_power_available':grid_capacity-grid_power_consumed}
+        rew_meta['step_meta']['device_custom_info'] = {'power_ask': power , 'power_unserved': unserved, 'charging_vehicle':len(self.charging_vehicles), 'vehicle_charged': len(self.departed_vehicles), 'solar_power_available': kwargs['pv_power'], 'es_power_available':kwargs['es_power'], 'grid_power_available':kwargs['grid_power']}
 
         done = self.is_terminal()
 
