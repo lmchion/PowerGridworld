@@ -191,7 +191,10 @@ class HSEVChargingEnv(ComponentEnv):
         step_meta["timestamp"] = kwargs['timestamp']
         step_meta["cost"] = step_cost
         step_meta["reward"] = reward
-        return reward, {"step_meta": step_meta}
+        
+        kwargs.update({"step_meta": step_meta})
+
+        return reward, kwargs
    
     def step(self, action: np.ndarray = None, **kwargs) -> Tuple[np.ndarray, float, bool, dict]:
 

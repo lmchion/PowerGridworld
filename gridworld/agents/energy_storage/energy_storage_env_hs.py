@@ -114,10 +114,7 @@ class HSEnergyStorageEnv(ComponentEnv):
           power: A float, the feasible power of the energy storage.
         """
         st_min = self.storage_range[0]
-        st_max = self.storage_range[1]
-
-        if abs(power) > self.max_power:
-            power = self.max_power * power / abs(power)  
+        st_max = self.storage_range[1] 
                   
         if power > 0:
             # Discharging: ensure the discharging power is within the range.
@@ -187,19 +184,22 @@ class HSEnergyStorageEnv(ComponentEnv):
         #     # when there is solar.
         #     reward -= self.max_storage_cost * (max(self.storage_range)-self.current_storage)
         
+        if self.is_terminal():
+            # energy store is on its last step; check if battery has any juice left;
+            # if it does ; penalize the remaining juice 
+
+            if self.current_storage > self.storage_range[0]:
+                reward -= (self.current_storage - self.storage_range[0]) * kwargs['max_grid_cost']
+        
         step_meta = {}
         step_meta['device_id'] = self.name
         step_meta["timestamp"] = kwargs['timestamp']
         step_meta["cost"] = step_cost
         step_meta["reward"] = reward
 
-        if self.is_terminal():
-            # energy store is on its last step; check if battery has any juice left;
-            # if it does ; penalize the remaining juice 
-            if self.current_storage > self.storage_range[0]:
-                reward -= (self.current_storage - self.storage_range[0]) * kwargs['max_grid_cost']
-                
-        return reward, {"step_meta": step_meta}
+        kwargs.update({"step_meta": step_meta})
+
+        return reward, kwargs
 
      
      
@@ -273,7 +273,8 @@ class HSEnergyStorageEnv(ComponentEnv):
         #  Convert to the positive for load and  negative for generation convention.
         self._real_power = -power
         obs, obs_meta = self.get_obs(**kwargs)
-
+        self.simulation_step += 1
+        
         rew, rew_meta = self.step_reward(**kwargs)
 
         rew_meta['step_meta']['action'] = action.tolist() 
@@ -288,11 +289,11 @@ class HSEnergyStorageEnv(ComponentEnv):
             rew_meta['step_meta']['solar_power_consumed'] = 0.0
             rew_meta['step_meta']['grid_power_consumed'] = 0.0
         
-
+        terminate = self.is_terminal()
+        
         obs_meta.update(rew_meta)
-        self.simulation_step += 1
-
-        return obs, rew, self.is_terminal(), False, obs_meta
+        
+        return obs, rew, terminate, False, obs_meta
     
 
     def is_terminal(self):

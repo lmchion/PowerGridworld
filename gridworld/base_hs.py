@@ -36,8 +36,6 @@ class HSMultiComponentEnv(MultiComponentEnv):
 
         #super().__init__(name=common_config.name, components=env_config.components, **kwargs)
 
-       
-       
 
         super().__init__(name=name, components=components, max_episode_steps=max_episode_steps, **kwargs)
 
@@ -56,7 +54,8 @@ class HSMultiComponentEnv(MultiComponentEnv):
         #     self.observation_space["grid_cost"], rescale=self.rescale_spaces)
 
         self.max_episode_steps = max_episode_steps if max_episode_steps is not None else np.inf
-        
+        self.minutes_per_step = 5.0
+
         self.meta_state = { 'timestamp': None,
                             'grid_cost': None,
                             'max_grid_cost': 0.57098, 
@@ -203,6 +202,26 @@ class HSMultiComponentEnv(MultiComponentEnv):
             if m:
                 meta[env.name] = m.copy()
 
+        # On each step, if there is any solar or battery juice left which does not get used, penalize this.
+        if kwargs['pv_power'] > 0.0:
+            reward -= kwargs['pv_power'] * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
+
+        if kwargs['es_power'] > 0.0:
+            reward -= kwargs['es_power'] * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
+
+        
+        # if at the end of step; if the pv available was not all actioned, and instead grid power got used
+        # then penalize the agent for using whatever grid power it used in place of solar. 
+        #if kwargs['']
+        ignored_pv_power = kwargs['pv_available_power']-kwargs['pv_actionable_power']
+
+        grid_power_used = self.max_grid_power-kwargs['grid_power']
+        
+        if ignored_pv_power > grid_power_used:
+            reward -= grid_power_used * self.meta_state['max_grid_cost'] * (self.minutes_per_step/60.0)
+        elif ignored_pv_power < grid_power_used:
+            reward -= ignored_pv_power * self.meta_state['max_grid_cost'] * (self.minutes_per_step/60.0)
+    
         return reward, meta
 
     def is_terminal(self):

@@ -5,17 +5,16 @@ import sys
 import time
 from collections import OrderedDict
 
+import gymnasium as gym
 import ray
 from callbacks import HSAgentTrainingCallback, HSDataLoggerCallback
 from ray import tune
 from ray.air.checkpoint import Checkpoint
-from ray.tune.registry import register_env
 from ray.cluster_utils import Cluster
+from ray.tune.registry import register_env
 
 from gridworld.log import logger
 from gridworld.scenarios.heterogeneous_hs import make_env_config
-import gymnasium as gym
-
 
 
 def env_creator(config: dict):
@@ -106,7 +105,7 @@ def main(**args):
         "lr": 1e-3,
         "num_sgd_iter": 10,
         "entropy_coeff": 0.0,
-        "train_batch_size": rollout_fragment_length*30,   # ensure reproducible
+        "train_batch_size": rollout_fragment_length,   # ensure reproducible
         "rollout_fragment_length": rollout_fragment_length,
         #"rollout_fragment_length": 'auto',
         "batch_mode": "complete_episodes",

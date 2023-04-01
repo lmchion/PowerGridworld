@@ -164,20 +164,22 @@ class HSDevicesEnv(ComponentEnv):
 
         reward = -step_cost
 
-        # This is the final sub-environment which gets to act in the system. On each step,
-        # if there is any solar or battery juice left which does not get used, penalize this.
-        if kwargs['oth_pv_power_available'] > 0.0:
-            reward -= kwargs['oth_pv_power_available'] * kwargs['max_grid_cost']
+        # # This is the final sub-environment which gets to act in the system. On each step,
+        # # if there is any solar or battery juice left which does not get used, penalize this.
+        # if kwargs['oth_pv_power_available'] > 0.0:
+        #     reward -= kwargs['oth_pv_power_available'] * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
 
-        if kwargs['oth_es_power_available'] > 0.0:
-            reward -= kwargs['oth_es_power_available'] * kwargs['max_grid_cost']
+        # if kwargs['oth_es_power_available'] > 0.0:
+        #     reward -= kwargs['oth_es_power_available'] * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
         
         step_meta["device_id"] = self.name
         step_meta["timestamp"] = kwargs['timestamp']
         step_meta["cost"] = step_cost
         step_meta["reward"] = reward
 
-        return reward, {"step_meta": step_meta}
+        kwargs.update({"step_meta": step_meta})
+
+        return reward, kwargs
 
 
 

@@ -77,11 +77,12 @@ class HSPVEnv(ComponentEnv):
             self.episode_length = min(max_episode_steps, self.episode_length)
 
         # Create the obs labels and bounds.
-        self._obs_labels = ["pv_power"]
+        self._obs_labels = ["pv_available_power", "pv_actionable_power"]
         self._obs_labels += ["min_voltage"] if grid_aware else []
 
         obs_bounds = {
-            "pv_power": (-np.max(self.data), 0.),
+            "pv_available_power": (-np.max(self.data), 0.),
+            "pv_actionable_power": (-np.max(self.data), 0.),
             "min_voltage": (0.9, 1.1)
         }
 
@@ -116,7 +117,7 @@ class HSPVEnv(ComponentEnv):
         else:
             obs = raw_obs
         
-        meta= {"pv_power": -raw_obs[0]}
+        meta= {"pv_available_power": -raw_obs[0]}
         
         #meta['pv_power']=meta['real_power']
 
@@ -143,16 +144,18 @@ class HSPVEnv(ComponentEnv):
         # the last obs) what the max power output is, and can react accordingly.
         obs, obs_meta = self.get_obs(**kwargs)
 
-        self._real_power = np.float64((action * obs_meta["pv_power"]).squeeze())
+        self._real_power = np.float64((action * obs_meta["pv_available_power"]).squeeze())
         self.index += 1
         rew, rew_meta = self.step_reward(**kwargs)
+
+        obs_meta["pv_actionable_power"] = self._real_power 
 
         rew_meta['pv_power']=self._real_power 
         rew_meta['step_meta']['action'] = action.tolist()
         rew_meta['step_meta']['solar_power_consumed'] = 0
         rew_meta['step_meta']['es_power_consumed'] = 0
         rew_meta['step_meta']['grid_power_consumed'] = 0
-        rew_meta['step_meta']['device_custom_info'] = {'pv_available_power': obs_meta["pv_power"], 'pv_actionable_power': self._real_power}
+        rew_meta['step_meta']['device_custom_info'] = {'pv_available_power': obs_meta["pv_available_power"], 'pv_actionable_power': obs_meta["pv_actionable_power"]}
 
         obs_meta.update(rew_meta)
         return obs, rew, self.is_terminal(), False, obs_meta
@@ -165,4 +168,7 @@ class HSPVEnv(ComponentEnv):
         step_meta["timestamp"] = kwargs['timestamp']
         step_meta["cost"] = 0
         step_meta["reward"] = reward
-        return reward, {"step_meta": step_meta}
+
+        kwargs.update({"step_meta": step_meta})
+
+        return reward, kwargs
