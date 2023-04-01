@@ -45,10 +45,24 @@ def make_env_config(env_config):
     # with open(os.path.join(THIS_DIR, "data/env_config.json"), 'r') as f:
     #     env_config = json.load(f)
 
-    
+    max_grid_power=env_config['max_grid_power']
          
     for elem in env_config['components']:
-        elem['cls']= getattr(sys.modules[__name__], elem['cls'])
+        if elem['cls']=="HSPVEnv":
+            max_pv_power=max(elem['config']['profile_data'])
+
+        if elem['cls']=="HSEnergyStorageEnv":
+            max_es_power=elem['config']['max_power']
+
+        
+
+    for elemx in env_config['components']:
+        if elemx['cls'] in ["HSEVChargingEnv","HSDevicesEnv","HSEnergyStorageEnv"]:
+            elemx['config']['max_grid_power']=max_grid_power
+            elemx['config']['max_es_power']=max_es_power
+            elemx['config']['max_pv_power']=max_pv_power
+        
+        elemx['cls']= getattr(sys.modules[__name__], elemx['cls'])
 
     env_config['control_timedelta']  =  pd.Timedelta(env_config['control_timedelta'])
 

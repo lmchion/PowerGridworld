@@ -30,6 +30,8 @@ class HSEnergyStorageEnv(ComponentEnv):
         rescale_spaces: bool = True,
         initial_storage_cost: float = 0.0,
         max_storage_cost: float = 0.55,
+        max_grid_power: float = None,
+        max_pv_power: float = None,
         **kwargs
     ):
 
@@ -53,12 +55,12 @@ class HSEnergyStorageEnv(ComponentEnv):
 
         self.control_interval_in_hr = control_timedelta.seconds / 3600.0
 
-        self._obs_labels =["stage_of_charge", "cost", "es_pv_power_available", "es_pv_power_consumed", "es_grid_power_consumed"]
+        self._obs_labels =["stage_of_charge", "cost", "es_pv_power_available", "es_pv_power_consumed", "es_grid_power_consumed", "es_grid_power_available"]
 
         self._observation_space = gym.spaces.Box(
-            shape=(5,),
-            low=np.array([self.storage_range[0],  0.0,               0.0, 0.0, 0.0]),
-            high=np.array([self.storage_range[1], max_storage_cost,  3.6, 3.6, self.storage_range[1]]),
+            shape=(6,),
+            low=np.array([self.storage_range[0],  0.0,               0.0, 0.0, 0.0,0.0]),
+            high=np.array([self.storage_range[1], max_storage_cost,  max_pv_power, self.max_power, self.max_power,max_grid_power]),
             dtype=np.float64
         )
         self.observation_space = maybe_rescale_box_space(
@@ -143,7 +145,8 @@ class HSEnergyStorageEnv(ComponentEnv):
 
         # Update the observation space with status of availability and consumption.
         # append "es_pv_power_available", "es_pv_power_consumed", "es_grid_power_consumed" to observation
-        raw_obs = np.array([self.current_storage, self.current_cost, kwargs['pv_power'], kwargs['solar_power_consumed'], kwargs['grid_power_consumed']])
+        raw_obs = np.array([self.current_storage, self.current_cost, kwargs['pv_power'], 
+                            kwargs['solar_power_consumed'], kwargs['grid_power_consumed'], kwargs['grid_power']])
 
         if self.rescale_spaces:
             obs = to_scaled(raw_obs, self._observation_space.low, self._observation_space.high)
@@ -154,6 +157,7 @@ class HSEnergyStorageEnv(ComponentEnv):
         meta["es_pv_power_available"] = kwargs['pv_power']
         meta["es_pv_power_consumed"] = kwargs['solar_power_consumed']
         meta["es_grid_power_consumed"] = kwargs['grid_power_consumed']
+        meta["es_grid_power_available"] = kwargs['grid_power']
 
         kwargs.update(meta)
 
@@ -276,7 +280,9 @@ class HSEnergyStorageEnv(ComponentEnv):
         rew_meta['step_meta']['solar_power_consumed'] = solar_power_consumed
         rew_meta['step_meta']['es_power_consumed'] = 0
         rew_meta['step_meta']['grid_power_consumed'] = grid_power_consumed
-        rew_meta['step_meta']['device_custom_info'] = {'current_storage': self.current_storage, 'power_ask': power, 'solar_power_available': kwargs['pv_power'], 'grid_power_available':kwargs['grid_power'], 'es_power_available':kwargs['es_power']}
+        rew_meta['step_meta']['device_custom_info'] = {'current_storage': self.current_storage, 'power_ask': power, 
+                                                       'solar_power_available': kwargs['pv_power'], 
+                                                       'grid_power_available':kwargs['grid_power'], 'es_power_available':kwargs['es_power']}
 
         if power > 0.0: # discharging for setting the pv and grid power to 0.
             rew_meta['step_meta']['solar_power_consumed'] = 0.0

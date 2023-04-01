@@ -41,8 +41,8 @@ echo "running locally" $run_locally
 
 if [ "$run_locally"  = "true" ]
 then
-    cd /home/rakesh/mids/210/PowerGridworld
-    rm -rf /media/rakesh/storage-partitio/data/outputs/ray_results/PPO/*
+    #cd /home/rakesh/mids/210/PowerGridworld
+    rm -rf $(pwd)/data/outputs/ray_results/PPO/*
     python3 -u $(pwd)/examples/marl/rllib/heterogeneous/train_loop_hs.py \
         --stop-iters  200 \
         --stop-reward -0.5 \

@@ -30,6 +30,9 @@ class HSEVChargingEnv(ComponentEnv):
         vehicle_multiplier: int = 1,
         rescale_spaces: bool = True,
         max_charge_cost: float = 0.55,
+        max_grid_power: float = None,
+        max_pv_power: float = None,
+        max_es_power: float = None,
         profile_data : dict = {},
         **kwargs
     ):
@@ -94,15 +97,15 @@ class HSEVChargingEnv(ComponentEnv):
             "current_cost" : (
                 0, max_charge_cost),
             "ev_pv_power_available" : (
-                0, 3.6), 
+                0, max_pv_power), 
             "ev_pv_power_consumed" : (
-                0, 3.6), 
+                0, max_charge_rate_kw), 
             "ev_es_power_available" : (
-                0, 12.0), 
+                0, max_es_power), 
             "ev_es_power_consumed" : (
                 0, max_charge_rate_kw), 
             "ev_grid_power_available" : (
-                0, 48.0), 
+                0, max_grid_power), 
             "ev_grid_power_consumed" : (
                 0, max_charge_rate_kw)
         })

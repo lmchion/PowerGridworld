@@ -25,6 +25,9 @@ class HSDevicesEnv(ComponentEnv):
         rescale_spaces: bool = True,
         max_episode_steps: int = None,
         minutes_per_step : int = 5,
+        max_grid_power: float = None,
+        max_pv_power: float = None,
+        max_es_power: float = None,
         **kwargs
     ):
 
@@ -88,12 +91,12 @@ class HSDevicesEnv(ComponentEnv):
                                 "oth_grid_power_available", 
                                 "oth_grid_power_consumed"])
         
-        obs_bounds["oth_pv_power_available"] = (0.0, 3.6)
-        obs_bounds["oth_pv_power_consumed"] = (0.0, 3.0)
-        obs_bounds["oth_es_power_available"] = (0.0, 12.0)
-        obs_bounds["oth_es_power_consumed"] = (0.0, 3.0)
-        obs_bounds["oth_grid_power_available"] = (0.0, 48.0)
-        obs_bounds["oth_grid_power_consumed"] = (0.0, 3.0)
+        obs_bounds["oth_pv_power_available"] = (0.0, max_pv_power)
+        obs_bounds["oth_pv_power_consumed"] = (0.0, max(list(self.data_pd[elem])))
+        obs_bounds["oth_es_power_available"] = (0.0, max_es_power)
+        obs_bounds["oth_es_power_consumed"] = (0.0, max(list(self.data_pd[elem])))
+        obs_bounds["oth_grid_power_available"] = (0.0,max_grid_power)
+        obs_bounds["oth_grid_power_consumed"] = (0.0, max(list(self.data_pd[elem])))
 
         # Create the optionally rescaled gym spaces.
         self._observation_space = gym.spaces.Box(
