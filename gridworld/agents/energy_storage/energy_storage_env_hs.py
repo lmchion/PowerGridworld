@@ -150,7 +150,7 @@ class HSEnergyStorageEnv(ComponentEnv):
         else:
             obs = raw_obs
         
-        meta ={'state_of_charge' : self.current_storage}
+        meta = {'es_current_storage' : self.current_storage}
         meta["es_pv_power_available"] = kwargs['pv_power']
         meta["es_pv_power_consumed"] = kwargs['solar_power_consumed']
         meta["es_grid_power_consumed"] = kwargs['grid_power_consumed']
@@ -272,9 +272,11 @@ class HSEnergyStorageEnv(ComponentEnv):
         kwargs['es_cost'] = 0 #self.current_cost
         #  Convert to the positive for load and  negative for generation convention.
         self._real_power = -power
-        obs, obs_meta = self.get_obs(**kwargs)
+        obs, kwargs = self.get_obs(**kwargs)
         self.simulation_step += 1
         
+        kwargs['es_es_power_available'] = kwargs['es_power']
+
         rew, rew_meta = self.step_reward(**kwargs)
 
         rew_meta['step_meta']['action'] = action.tolist() 
@@ -291,9 +293,9 @@ class HSEnergyStorageEnv(ComponentEnv):
         
         terminate = self.is_terminal()
         
-        obs_meta.update(rew_meta)
+        kwargs.update(rew_meta)
         
-        return obs, rew, terminate, False, obs_meta
+        return obs, rew, terminate, False, kwargs
     
 
     def is_terminal(self):
