@@ -120,6 +120,7 @@ class HSEVChargingEnv(ComponentEnv):
 
         # Use the state dict to create the observation labels.
         self._obs_labels = list(self.state.keys())
+        #print(self._obs_labels)
 
 
     def reset(self, **kwargs) -> Tuple[dict, dict]:
@@ -169,8 +170,8 @@ class HSEVChargingEnv(ComponentEnv):
         step_cost = self.current_cost * self._real_power
 
         step_meta = {}
-
-        reward = -(step_cost + kwargs['grid_cost'] * self.state["real_power_unserved"])
+        
+        reward = -(step_cost + self.unserved_penalty * self.state["real_power_unserved"]**2)
         
         step_meta["device_id"] = self.name
         step_meta["timestamp"] = kwargs['timestamp']
@@ -204,6 +205,8 @@ class HSEVChargingEnv(ComponentEnv):
         # Get vehicles that have left the station in the last time step.
         self.departed_vehicles = list(set(self.charging_vehicles) - set(charging_vehicles))
         logger.debug(f"STEP, {self.time}, {self.time_index}, {charging_vehicles}, {self.departed_vehicles}")
+
+        #print(self.time, charging_vehicles, self.departed_vehicles)
 
         # Aggregate quantities that are needed for obs space.
         real_power_consumed = 0.
@@ -250,7 +253,9 @@ class HSEVChargingEnv(ComponentEnv):
         unserved = 0.
         for i in self.departed_vehicles:
             unserved  += self.df["energy_required_kwh"][i]
+            #print(unserved)
         self._update("real_power_unserved", unserved)
+        
 
         # Update the state dict.
         self._update("time", self.time)
