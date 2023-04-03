@@ -226,7 +226,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
             # min(es_max_charging_rate-es_power_ask , (es_max_storage - es_current_storage)/12 )
             # penalize the above value.  
 
-            power_to_penalize = min(es_max_charging_rate-kwargs['es_power_ask'] , (es_max_storage - kwargs['es_current_storage'])*( 60 /self.minutes_per_step))
+            power_to_penalize = min(es_max_charging_rate-kwargs['es_power'] , (es_max_storage - kwargs['es_current_storage'])*( 60 /self.minutes_per_step))
             reward -= factor* power_to_penalize * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
         
         # At the end of step; if the pv available was not all actioned, and instead grid power got used
@@ -252,7 +252,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         # if ignored_pv_power > 0 and there is any storage-space left in the battery to fill,
         # then,  penalize the min( min(es_max_charging_rate-es_power_ask , (es_max_storage - es_current_storage)/12 ) , ignored_pv_power) 
         if ignored_pv_power > 0 and (es_max_storage - kwargs['es_current_storage']) > 0.0:
-            foregone_es_power = min(es_max_charging_rate-kwargs['es_power_ask'] , (es_max_storage - kwargs['es_current_storage'])*( 60 /self.minutes_per_step))
+            foregone_es_power = min(es_max_charging_rate-kwargs['es_power'] , (es_max_storage - kwargs['es_current_storage'])*( 60 /self.minutes_per_step))
             power_to_penalize = min(foregone_es_power, ignored_pv_power)
 
             reward -= factor*power_to_penalize * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
