@@ -97,7 +97,7 @@ class HSPVEnv(ComponentEnv):
             self._observation_space, rescale=self.rescale_spaces)
 
         self._action_space = gym.spaces.Box(
-            shape=(1,), low=0.0, high=1., dtype=np.float64)
+            shape=(1,), low=0.99, high=1., dtype=np.float64)
 
         self.action_space = maybe_rescale_box_space(
             self._action_space, rescale=self.rescale_spaces)

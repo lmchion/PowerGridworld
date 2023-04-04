@@ -184,12 +184,12 @@ class HSEnergyStorageEnv(ComponentEnv):
         #     # when there is solar.
         #     reward -= self.max_storage_cost * (max(self.storage_range)-self.current_storage)
         
-        if self.is_terminal():
-            # energy store is on its last step; check if battery has any juice left;
-            # if it does ; penalize the remaining juice 
+        # if self.is_terminal():
+        #     # energy store is on its last step; check if battery has any juice left;
+        #     # if it does ; penalize the remaining juice 
 
-            if self.current_storage > self.storage_range[0]:
-                reward -= (self.current_storage - self.storage_range[0]) * kwargs['max_grid_cost']
+        #     if self.current_storage > self.storage_range[0]:
+        #         reward -= (self.current_storage - self.storage_range[0]) * kwargs['max_grid_cost']
         
         step_meta = {}
         step_meta['device_id'] = self.name

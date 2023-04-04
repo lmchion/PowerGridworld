@@ -106,8 +106,8 @@ def main(**args):
         "num_sgd_iter": 10,
         "entropy_coeff": 0.0,
         "train_batch_size": rollout_fragment_length,   # ensure reproducible
-        "rollout_fragment_length": rollout_fragment_length,
-        #"rollout_fragment_length": 'auto',
+        #"rollout_fragment_length": rollout_fragment_length*num_workers,
+        "rollout_fragment_length": 'auto',
         "batch_mode": "complete_episodes",
         "observation_filter": "MeanStdFilter",
     }

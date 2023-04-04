@@ -55,6 +55,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
 
         self.max_episode_steps = max_episode_steps if max_episode_steps is not None else np.inf
         self.minutes_per_step = 5.0
+        self.reward=0.0
 
         self.meta_state = { 'timestamp': None,
                             'grid_cost': None,
@@ -137,13 +138,15 @@ class HSMultiComponentEnv(MultiComponentEnv):
         self.meta_state['grid_cost']= self._grid_cost_data[self.time_index] 
         self.meta_state['grid_power'] = self.max_grid_power
         self.meta_state['step_meta'] = []
+        self.reward = 0.0
         # Loop over envs and collect real power injection/consumption.
         for subcomp in self.envs:
             subcomp_kwargs = {k: v for k,
                               v in kwargs.items() if k in subcomp._obs_labels}
             subcomp_kwargs.update(self.meta_state)
-            subcomp_obs, _, subcomp_done, flag, subcomp_meta = subcomp.step(
+            subcomp_obs, reward, subcomp_done, flag, subcomp_meta = subcomp.step(
                 action[subcomp.name], **subcomp_kwargs)
+            self.reward +=reward
             obs[subcomp.name] = subcomp_obs.copy()
             dones.append(subcomp_done)
             real_power += subcomp.real_power
@@ -181,8 +184,9 @@ class HSMultiComponentEnv(MultiComponentEnv):
         self._real_power = real_power
         self.done=any(dones)
         # Compute the step reward using user-implemented method.
-        step_reward, _ = self.step_reward(**self.meta_state)
         self.time_index += 1
+        step_reward, _ = self.step_reward(**self.meta_state)
+        
         return obs, step_reward, any(dones), False, self.meta_state
 
     # step reward from the base environment definition continues to apply to this env as well.
@@ -196,75 +200,89 @@ class HSMultiComponentEnv(MultiComponentEnv):
         meta = {}
 
         # Loop over envs and create the reward dict.
-        for env in self.envs:
-            r, m = env.step_reward(**kwargs)
-            reward += r
-            if m:
-                meta[env.name] = m.copy()
+        # for env in self.envs:
+        #     r, m = env.step_reward(**kwargs)
+        #     reward += r
+        #     if m:
+        #         meta[env.name] = m.copy()
+
+        reward = self.reward
 
         ######################################################################################
         ##### PV and Battery optimization #####
 
-        factor=1
+        mult_unused_power=20
+
+
         es_env = [e for e in self.envs if e.name=='storage']
         es_max_storage = max(es_env[0].storage_range)
+        es_min_storage = min(es_env[0].storage_range)
         es_max_charging_rate = es_env[0].max_power
         es_power_ask = kwargs['es_pv_power_consumed'] + kwargs['es_grid_power_consumed']
-        
-        # On each step, if there is any solar or battery juice left which does not get used, penalize this.
-        if kwargs['pv_power'] > 0.0:
-            reward -=factor* kwargs['pv_power'] * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
 
-        # At the end of step; if the pv available was not all actioned, and instead grid power got used
-        # then penalize the agent for using whatever grid power it used in place of solar. 
-        if kwargs['es_power'] > 0.0:
-            reward -= factor* kwargs['es_power'] * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
-
-        if kwargs['pv_power'] > 0.0 and (es_max_storage - kwargs['es_current_storage']) > 0.0:
-            # regardless of whether the battery charged or discharged,
-            # if pv_power is available and there is any storage-space left in the battery to fill,
-            # min(es_max_charging_rate-es_power_ask , (es_max_storage - es_current_storage)/12 )
-            # penalize the above value.  
-
-            power_to_penalize = min(es_max_charging_rate-kwargs['es_power'] , (es_max_storage - kwargs['es_current_storage'])*( 60 /self.minutes_per_step))
-            reward -= factor* power_to_penalize * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
-        
         # At the end of step; if the pv available was not all actioned, and instead grid power got used
         # then penalize the agent for using whatever grid power it used in place of solar. 
         ignored_pv_power = kwargs['pv_available_power']-kwargs['pv_actionable_power']
         grid_power_used = self.max_grid_power-kwargs['grid_power']
         es_power_used = kwargs['es_es_power_available']-kwargs['es_power']
 
-        if ignored_pv_power > grid_power_used:
-            reward -= factor*grid_power_used * self.meta_state['max_grid_cost'] * (self.minutes_per_step/60.0)
-        elif ignored_pv_power <= grid_power_used:
-            reward -= factor*ignored_pv_power * self.meta_state['max_grid_cost'] * (self.minutes_per_step/60.0)
+        #unused_es_storage=0
+        if self.is_terminal():
+        #     # energy store is on its last step; check if battery has any juice left;
+        #     # if it does ; penalize the remaining juice 
+            
+            if kwargs['es_current_storage'] > es_min_storage:
+                unused_es_storage= (kwargs['es_current_storage'] - es_min_storage) * (60/self.minutes_per_step)
+                reward -= unused_es_storage * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
 
-        # At the end of step; if the pv available was not all actioned, and instead battery power got used
-        # then penalize the agent for using whatever battery power it used in place of solar. 
-        if ignored_pv_power > es_power_used:
-            reward -= factor*es_power_used * self.meta_state['max_grid_cost'] * (self.minutes_per_step/60.0)
-        elif ignored_pv_power <= es_power_used:
-            reward -= factor*ignored_pv_power * self.meta_state['max_grid_cost'] * (self.minutes_per_step/60.0)
+        reward -= mult_unused_power* ( kwargs['pv_power'] + kwargs['es_power']+ ignored_pv_power ) * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
+
+        if False:
+        
+            # On each step, if there is any solar or battery juice left which does not get used, penalize this.
+            if kwargs['pv_power'] > 0.0:
+                reward -= kwargs['pv_power'] * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
+
+            # At the end of step; if the pv available was not all actioned, and instead grid power got used
+            # then penalize the agent for using whatever grid power it used in place of solar. 
+            if kwargs['es_power'] > 0.0:
+                reward -=  kwargs['es_power'] * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
+
+            if kwargs['pv_power'] > 0.0 and (es_max_storage - kwargs['es_current_storage']) > 0.0:
+                # regardless of whether the battery charged or discharged,
+                # if pv_power is available and there is any storage-space left in the battery to fill,
+                # min(es_max_charging_rate-es_power_ask , (es_max_storage - es_current_storage)/12 )
+                # penalize the above value.  
+
+                power_to_penalize = min(es_max_charging_rate-kwargs['es_power'] , (es_max_storage - kwargs['es_current_storage'])*( 60 /self.minutes_per_step))
+                reward -=  power_to_penalize * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
+            
+    
+            reward -= min(ignored_pv_power,grid_power_used) * self.meta_state['max_grid_cost'] * (self.minutes_per_step/60.0)
+
+            # At the end of step; if the pv available was not all actioned, and instead battery power got used
+            # then penalize the agent for using whatever battery power it used in place of solar. 
+            reward -= min (es_power_used,ignored_pv_power) * self.meta_state['max_grid_cost'] * (self.minutes_per_step/60.0)
 
 
-        # regardless of whether the battery charged or discharged,
-        # if ignored_pv_power > 0 and there is any storage-space left in the battery to fill,
-        # then,  penalize the min( min(es_max_charging_rate-es_power_ask , (es_max_storage - es_current_storage)/12 ) , ignored_pv_power) 
-        if ignored_pv_power > 0 and (es_max_storage - kwargs['es_current_storage']) > 0.0:
-            foregone_es_power = min(es_max_charging_rate-kwargs['es_power'] , (es_max_storage - kwargs['es_current_storage'])*( 60 /self.minutes_per_step))
-            power_to_penalize = min(foregone_es_power, ignored_pv_power)
+            # regardless of whether the battery charged or discharged,
+            # if ignored_pv_power > 0 and there is any storage-space left in the battery to fill,
+            # then,  penalize the min( min(es_max_charging_rate-es_power_ask , (es_max_storage - es_current_storage)/12 ) , ignored_pv_power) 
+            if (ignored_pv_power > 0 or kwargs['pv_power'] > 0.0 ) and (es_max_storage - kwargs['es_current_storage']) > 0.0:
+                foregone_es_power = min(es_max_charging_rate-kwargs['es_power'] , (es_max_storage - kwargs['es_current_storage'])*( 60 /self.minutes_per_step))
+                power_to_penalize = min(foregone_es_power, ignored_pv_power+kwargs['pv_power'])
 
-            reward -= factor*power_to_penalize * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
+                reward -= power_to_penalize * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
 
 
         ######################################################################################
 
         return reward, meta
 
+    # def is_terminal(self):
+    #     """The episode is done when the end of the data is reached."""
     def is_terminal(self):
-        """The episode is done when the end of the data is reached."""
-        return self.done
+        return self.time_index == self.max_episode_steps
     
     # def seed(self,seed : int ):
     #     return self.action_space.seed(seed)

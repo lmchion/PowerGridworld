@@ -11,9 +11,9 @@ directory= Path(__file__).parents[0]
 gw_path=Path(__file__).parents[4]
 print(directory)
 
-list_files = subprocess.run(['python','-u','train_hs.py','--stop-iters','200','--stop-reward','-0.5',
-                             '--num-cpus','1','--num-gpus','1','--local-dir',str(gw_path)+'/data/outputs/ray_results',
-                             '--max-episode-steps','288','--input-dir', str(gw_path)+'/data/inputs','--training-iteration','200',
+list_files = subprocess.run(['python','-u','train_hs.py','--stop-iters','100','--stop-reward','0.0',
+                             '--num-cpus','5','--num-gpus','1','--local-dir',str(gw_path)+'/data/outputs/ray_results',
+                             '--max-episode-steps','288','--input-dir', str(gw_path)+'/data/inputs','--training-iteration','100',
                              '--log-level','INFO','--scenario-id','010'],
                             cwd=str(directory))
 
