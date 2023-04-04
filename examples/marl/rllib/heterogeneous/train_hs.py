@@ -4,7 +4,7 @@ import json
 import sys
 import time
 from collections import OrderedDict
-
+import random
 import gymnasium as gym
 import ray
 from callbacks import HSAgentTrainingCallback, HSDataLoggerCallback
@@ -12,6 +12,7 @@ from ray import tune
 from ray.air.checkpoint import Checkpoint
 from ray.cluster_utils import Cluster
 from ray.tune.registry import register_env
+from ray.tune.schedulers import PopulationBasedTraining
 
 from gridworld.log import logger
 from gridworld.scenarios.heterogeneous_hs import make_env_config
@@ -102,15 +103,38 @@ def main(**args):
     # so that results are reproducible, but 34 CPU workers were used in training 
     # -- expect slower performence if using fewer.
     hyperparam_config = {
+        'lambda' : 1.0,
+        'kl_coeff' : 0.2,
         "lr": 1e-3,
         "num_sgd_iter": 10,
         "entropy_coeff": 0.0,
+        "clip_param" : 0.3,
         "train_batch_size": rollout_fragment_length,   # ensure reproducible
         #"rollout_fragment_length": rollout_fragment_length*num_workers,
+        "sgd_minibatch_size" : rollout_fragment_length,
         "rollout_fragment_length": 'auto',
         "batch_mode": "complete_episodes",
         "observation_filter": "MeanStdFilter",
     }
+
+    hyperparam_mutations = {
+        "lambda": [0.9, 0.8, 1.0],
+        "clip_param": [0.01, 0.5],
+        "lr": [1e-3, 1e-4, 1e-5],
+        "num_sgd_iter": [1, 10, 30],
+        "sgd_minibatch_size": [rollout_fragment_length/2, rollout_fragment_length],
+    }
+
+    pbt = PopulationBasedTraining(
+        #time_attr="time_total_s",
+        mode="max",
+        #perturbation_interval=120,
+        resample_probability=0.50,
+        # Specifies the mutations of these hyperparams
+        hyperparam_mutations=hyperparam_mutations,
+        require_attrs=False
+    
+    )
 
     # Run the trial.
     experiment = tune.run(
@@ -123,6 +147,7 @@ def main(**args):
         stop=stop,
         callbacks=[HSDataLoggerCallback(scenario_id)],
         restore=checkpoint,
+        #scheduler=pbt,
         #resume="AUTO",
         config={
             "env": env_name,
@@ -161,6 +186,13 @@ def main(**args):
     #     print("waiting")
     #     time.sleep(1)
     #ray.shutdown(_exiting_interpreter= False)
+
+    best_result = experiment.best_result()
+    import pprint
+    print("Best performing trial's final set of hyperparameters:\n")
+    pprint.pprint(
+    {k: v for k, v in best_result.config.items() if k in hyperparam_mutations}
+    )
 
     last_checkpoint=experiment.get_last_checkpoint()
     return(last_checkpoint)

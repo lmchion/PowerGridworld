@@ -56,6 +56,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         self.max_episode_steps = max_episode_steps if max_episode_steps is not None else np.inf
         self.minutes_per_step = 5.0
         self.reward=0.0
+        self.unused_power=0.0
 
         self.meta_state = { 'timestamp': None,
                             'grid_cost': None,
@@ -212,7 +213,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         ##### PV and Battery optimization #####
 
         mult_unused_power=20
-
+        mult_unused_storage=1
 
         es_env = [e for e in self.envs if e.name=='storage']
         es_max_storage = max(es_env[0].storage_range)
@@ -222,9 +223,11 @@ class HSMultiComponentEnv(MultiComponentEnv):
 
         # At the end of step; if the pv available was not all actioned, and instead grid power got used
         # then penalize the agent for using whatever grid power it used in place of solar. 
-        ignored_pv_power = kwargs['pv_available_power']-kwargs['pv_actionable_power']
+        ignored_pv_power = kwargs['pv_available_power']-kwargs['pv_actionable_power'] #100
         grid_power_used = self.max_grid_power-kwargs['grid_power']
         es_power_used = kwargs['es_es_power_available']-kwargs['es_power']
+
+        self.unused_power +=kwargs['pv_power'] + kwargs['es_power']+ ignored_pv_power
 
         #unused_es_storage=0
         if self.is_terminal():
@@ -233,9 +236,9 @@ class HSMultiComponentEnv(MultiComponentEnv):
             
             if kwargs['es_current_storage'] > es_min_storage:
                 unused_es_storage= (kwargs['es_current_storage'] - es_min_storage) * (60/self.minutes_per_step)
-                reward -= unused_es_storage * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
-
-        reward -= mult_unused_power* ( kwargs['pv_power'] + kwargs['es_power']+ ignored_pv_power ) * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
+                #reward -= mult_unused_storage*unused_es_storage * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
+                reward -= mult_unused_power* ( self.unused_power ) * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
+        
 
         if False:
         
