@@ -119,10 +119,10 @@ def main(**args):
 
     hyperparam_mutations = {
         "lambda": [0.9, 0.8, 1.0],
-        "clip_param": [0.01, 0.5],
+        "clip_param": [0.01,0.1, 0.5],
         "lr": [1e-3, 1e-4, 1e-5],
         "num_sgd_iter": [1, 10, 30],
-        "sgd_minibatch_size": [rollout_fragment_length/2, rollout_fragment_length],
+        "sgd_minibatch_size": [rollout_fragment_length/2, rollout_fragment_length*3/4, rollout_fragment_length],
     }
 
     pbt = PopulationBasedTraining(
@@ -187,11 +187,12 @@ def main(**args):
     #     time.sleep(1)
     #ray.shutdown(_exiting_interpreter= False)
 
-    best_result = experiment.best_result()
+    best_result = experiment.get_best_trial().last_result
     import pprint
     print("Best performing trial's final set of hyperparameters:\n")
+    #print(best_result)
     pprint.pprint(
-    {k: v for k, v in best_result.config.items() if k in hyperparam_mutations}
+    {k: v for k, v in best_result['config'].items() if k in hyperparam_mutations}
     )
 
     last_checkpoint=experiment.get_last_checkpoint()

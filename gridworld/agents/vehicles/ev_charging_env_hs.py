@@ -185,7 +185,7 @@ class HSEVChargingEnv(ComponentEnv):
 
         step_meta = {}
 
-        reward = -(step_cost + kwargs['max_grid_cost'] * self.state["real_power_unserved"])
+        reward = -np.exp(2*(step_cost + kwargs['max_grid_cost'] * self.state["real_power_unserved"]))
         
         step_meta["device_id"] = self.name
         step_meta["timestamp"] = kwargs['timestamp']

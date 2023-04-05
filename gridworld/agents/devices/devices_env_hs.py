@@ -162,7 +162,7 @@ class HSDevicesEnv(ComponentEnv):
 
         step_meta = {}
 
-        reward = -step_cost
+        reward = -np.exp(2*step_cost)
 
         # # This is the final sub-environment which gets to act in the system. On each step,
         # # if there is any solar or battery juice left which does not get used, penalize this.

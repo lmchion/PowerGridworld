@@ -173,7 +173,7 @@ class HSEnergyStorageEnv(ComponentEnv):
 
         #the reward has to be negative so higher reward for less cost
 
-        reward = -step_cost
+        reward = -np.exp(2*step_cost)
 
         # solar_capacity = kwargs['pv_power']
         # battery_capacity = kwargs['es_power']
