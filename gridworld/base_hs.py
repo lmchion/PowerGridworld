@@ -78,6 +78,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
 
     def reset(self, *, seed=None, options=None, **kwargs ) -> Tuple[dict, dict]:
         self.time_index = 0
+        self.unused_power=0.0
         self.meta_state['timestamp']= self._timestamps[self.time_index] #self._grid_cost_data['timestamp'].tolist()[self.time_index]
         self.meta_state['grid_cost']= self._grid_cost_data[self.time_index] #self._grid_cost_data['grid_cost'].tolist()[self.time_index]
         self.meta_state['grid_power'] = self.max_grid_power
@@ -212,7 +213,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         ######################################################################################
         ##### PV and Battery optimization #####
 
-        mult_unused_power=50.0
+        mult_unused_power=25.0
         mult_unused_storage=1
 
         es_env = [e for e in self.envs if e.name=='storage']
