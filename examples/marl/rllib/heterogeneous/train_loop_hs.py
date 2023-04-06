@@ -7,7 +7,7 @@ import random
 import re
 import subprocess
 import time
-
+import api
 
 def main(**args):
     directory = os.path.dirname(os.path.realpath(__file__))
@@ -74,13 +74,15 @@ def main(**args):
                 # print(del_dir)
 
 
-
-            last_checkpoint = re.search('local_path=(.*)\)\\n', str(proc.stdout, 'UTF-8') )
-            last_checkpoint=last_checkpoint.group(1)
+            print('######################',str(proc.stdout, 'UTF-8'))
+            # last_checkpoint = re.search('local_path=(.*)\)\\n', str(proc.stdout, 'UTF-8') )
+            # last_checkpoint=last_checkpoint.group(1)
+            last_checkpoint=str(proc.stdout, 'UTF-8')
             run_date = re.search('=torch_(.*)/checkpoint', last_checkpoint )
             run_date=run_date.group(1)
             prior_run_dir='/'.join(last_checkpoint.split('/')[:-1])
             output_dir='/'.join(last_checkpoint.split('/')[:-2])
+            api.push_data(output_dir, "final_validation")
 
             print('last_checkpoint',last_checkpoint)
 

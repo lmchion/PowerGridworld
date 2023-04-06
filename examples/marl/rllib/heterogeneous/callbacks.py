@@ -100,7 +100,7 @@ class HSDataLoggerCallback(LoggerCallback):
 
 
     def on_experiment_end(self, trials, **info):
-        print("on_experiment_end dumping the last result for validation..")
+        #print("on_experiment_end dumping the last result for validation..")
         result = trials[0].last_result
         logdir = trials[0].logdir
         episode_media = result["episode_media"]

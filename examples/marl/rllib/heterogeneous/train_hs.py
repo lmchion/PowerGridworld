@@ -187,15 +187,18 @@ def main(**args):
     #     time.sleep(1)
     #ray.shutdown(_exiting_interpreter= False)
 
-    best_result = experiment.get_best_trial().last_result
-    import pprint
-    print("Best performing trial's final set of hyperparameters:\n")
-    #print(best_result)
-    pprint.pprint(
-    {k: v for k, v in best_result['config'].items() if k in hyperparam_mutations}
-    )
+    # best_result = experiment.get_best_trial().last_result
+    # import pprint
+    # print("Best performing trial's final set of hyperparameters:\n")
+    # #print(best_result)
+    # pprint.pprint(
+    # {k: v for k, v in best_result['config'].items() if k in hyperparam_mutations}
+    # )
 
-    last_checkpoint=experiment.get_last_checkpoint()
+    trial = experiment.get_best_logdir(metric="training_iteration", mode="max")
+
+    last_checkpoint = experiment.get_best_checkpoint(trial, "training_iteration", "max",True)
+
     return(last_checkpoint)
 
     
