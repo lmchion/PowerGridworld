@@ -136,22 +136,28 @@ class HSPVEnv(ComponentEnv):
         return self.index == (self.episode_length)
     
     def step(self, action, **kwargs):
+        raw_action = action
         if self.rescale_spaces:
-            action = to_raw(action, self._action_space.low, self._action_space.high)
+            raw_action = to_raw(raw_action, self._action_space.low, self._action_space.high)
 
         # We apply the control first, then step.  The correct thing to do here
         # could be subtle, but for now we're assuming the agent knows (based on
         # the last obs) what the max power output is, and can react accordingly.
         obs, obs_meta = self.get_obs(**kwargs)
 
-        self._real_power = np.float64((action * obs_meta["pv_available_power"]).squeeze())
+        self._real_power = np.float64((raw_action * obs_meta["pv_available_power"]).squeeze())
         self.index += 1
         rew, rew_meta = self.step_reward(**kwargs)
+
+        if action < 0.9:
+            rew -= (90-100*action.tolist()[0])**2
+        else:
+            rew += (5*action.tolist()[0])**2
 
         obs_meta["pv_actionable_power"] = self._real_power 
 
         rew_meta['pv_power']=self._real_power 
-        rew_meta['step_meta']['action'] = action.tolist()
+        rew_meta['step_meta']['action'] = raw_action.tolist()
         rew_meta['step_meta']['solar_power_consumed'] = 0
         rew_meta['step_meta']['es_power_consumed'] = 0
         rew_meta['step_meta']['grid_power_consumed'] = 0
@@ -163,7 +169,7 @@ class HSPVEnv(ComponentEnv):
     def step_reward(self, **kwargs):
         step_meta = {}
         reward = 0
-        
+
         step_meta["device_id"] = self.name
         step_meta["timestamp"] = kwargs['timestamp']
         step_meta["cost"] = 0

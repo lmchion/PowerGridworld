@@ -163,17 +163,30 @@ class HSEnergyStorageEnv(ComponentEnv):
     def step_reward(self,**kwargs):
 
         step_cost = 0.0
+        reward = 0.0
         
         if self._real_power < 0 :  # discharging
-            step_cost = 0.0  # when it is negative, the battery becomes a producer SO no reward
+            step_cost = 0.0  
+            reward += (10 * kwargs['grid_cost'])**2
         else:  # charging
             # es_cost = cost of charging (solar + grid) $/Kwh * efficiency % * power (Kw) * time (h)
             
             step_cost = self.delta_cost * self._real_power * self.control_interval_in_hr
 
+            reward -= 20 * (step_cost)
+
+            reward -= (20 * kwargs['grid_cost'] * kwargs['grid_power_consumed'] * self.control_interval_in_hr) ** 4
+
+            reward += (40 * kwargs['max_grid_cost'] * kwargs['solar_power_consumed'] * self.control_interval_in_hr) 
+
+            if self.current_storage < np.mean(self.storage_range):
+                reward += 10 * (step_cost)
+
+            if self.current_storage >= np.mean(self.storage_range):
+                reward -= 40 * (step_cost)
         #the reward has to be negative so higher reward for less cost
 
-        reward = -np.exp(step_cost)
+        
 
         # solar_capacity = kwargs['pv_power']
         # battery_capacity = kwargs['es_power']

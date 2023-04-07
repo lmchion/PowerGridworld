@@ -184,8 +184,15 @@ class HSEVChargingEnv(ComponentEnv):
         step_cost = self.current_cost * self._real_power # ( gridcost x grid usage + solar*solar usage + batter x batteryusage)
 
         step_meta = {}
+        reward = 0
 
-        reward = -np.exp((step_cost + kwargs['max_grid_cost'] * self.state["real_power_unserved"]))
+        reward -= 20 * (step_cost)
+
+        reward -= (10 * kwargs['grid_cost'] * kwargs['grid_power_consumed'] * self.minutes_per_step / 60.) ** 4
+
+        reward += (40 * kwargs['max_grid_cost'] * (kwargs['solar_power_consumed']+kwargs['es_power_consumed']) * self.minutes_per_step / 60.) 
+    
+        # reward = -np.exp((step_cost + kwargs['max_grid_cost'] * self.state["real_power_unserved"]))
         
         step_meta["device_id"] = self.name
         step_meta["timestamp"] = kwargs['timestamp']
