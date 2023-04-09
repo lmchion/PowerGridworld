@@ -36,8 +36,13 @@ def main(**args):
             print("env",env)
             timeStarted = time.time()  
             cnt +=1
-            training_iteration=int(int(args["training_iteration"])*cnt)
-            print("training_iteration",training_iteration,args["training_iteration"],cnt )
+            if bool(args["standalone_train"])==True:
+                training_iteration=int(int(args["training_iteration"]))
+                print("training_iteration",training_iteration )
+            else:
+                training_iteration=int(int(args["training_iteration"])*cnt)
+                print("training_iteration",training_iteration,args["training_iteration"],cnt )
+                
             proc = subprocess.run(['python','-u','train_hs.py', 
                                          '--stop-iters',str(args["stop_iters"]), 
                                          '--stop-reward',str(args["stop_reward"]), 
@@ -68,21 +73,19 @@ def main(**args):
                 for f in glob.glob( output_dir+"/*"+run_date[:-2]+"*.json"):
                    os.remove(f)
 
-                # del_dir = subprocess.run(['rm','-rf',output_dir+'/basic-variant-state-'+run_date+'.json'])
-                # print(del_dir)
-                # del_dir = subprocess.run(['rm','-rf',output_dir+'/experiment_state-'+run_date+'.json'])
-                # print(del_dir)
-
-
-            print('######################',str(proc.stdout, 'UTF-8'))
-            # last_checkpoint = re.search('local_path=(.*)\)\\n', str(proc.stdout, 'UTF-8') )
-            # last_checkpoint=last_checkpoint.group(1)
-            last_checkpoint=str(proc.stdout, 'UTF-8')
+            last_checkpoint=(str(proc.stdout, 'UTF-8')).strip()
             run_date = re.search('=torch_(.*)/checkpoint', last_checkpoint )
             run_date=run_date.group(1)
-            prior_run_dir='/'.join(last_checkpoint.split('/')[:-1])
-            output_dir='/'.join(last_checkpoint.split('/')[:-2])
-            api.push_data(output_dir, "final_validation")
+            prior_run_dir='/'.join(last_checkpoint.split('/')[:-2])
+            output_dir='/'.join(last_checkpoint.split('/')[:-3])
+            
+            if bool(args["standalone_train"])==True:
+                last_checkpoint=None
+                print('$$$$$$$$$$$$$$$$$$$$$$',last_checkpoint)
+                
+            print("prior_run_dir",prior_run_dir)
+            print("output_dir",output_dir)
+            api.push_data(prior_run_dir, "final_validation")
 
             print('last_checkpoint',last_checkpoint)
 

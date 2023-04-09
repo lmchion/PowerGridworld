@@ -214,7 +214,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         ##### PV and Battery optimization #####
 
         mult_unused_power=25.0
-        mult_unused_storage=1
+        mult_unused_storage=1.0
 
         es_env = [e for e in self.envs if e.name=='storage']
         es_max_storage = max(es_env[0].storage_range)
@@ -238,7 +238,10 @@ class HSMultiComponentEnv(MultiComponentEnv):
             if kwargs['es_current_storage'] > es_min_storage:
                 unused_es_storage= (kwargs['es_current_storage'] - es_min_storage) * (60/self.minutes_per_step)
                 #reward -= mult_unused_storage*unused_es_storage * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
-                reward -= mult_unused_power* ( self.unused_power ) * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)        
+            reward -= mult_unused_power* ( self.unused_power ) * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0) 
+            #reward -= (1+reward)**3        
+        #reward -= np.exp( ( self.unused_power ) * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)  )      
+
 
         if False:
         

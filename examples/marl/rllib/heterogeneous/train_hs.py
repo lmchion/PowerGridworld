@@ -14,6 +14,8 @@ from ray.cluster_utils import Cluster
 from ray.tune.registry import register_env
 from ray.tune.schedulers import PopulationBasedTraining
 
+
+
 from gridworld.log import logger
 from gridworld.scenarios.heterogeneous_hs import make_env_config
 
@@ -104,6 +106,7 @@ def main(**args):
     # -- expect slower performence if using fewer.
     hyperparam_config = {
         'lambda' : 1.0,
+        'gamma' : 1.0,
         'kl_coeff' : 0.2,
         "lr": 1e-3,
         "num_sgd_iter": 10,
@@ -149,6 +152,7 @@ def main(**args):
         restore=checkpoint,
         #scheduler=pbt,
         #resume="AUTO",
+       # gamma=1.0,
         config={
             "env": env_name,
             "env_config": env_config,

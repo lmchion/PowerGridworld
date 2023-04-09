@@ -42,17 +42,18 @@ echo "running locally" $run_locally
 if [ "$run_locally"  = "true" ]
 then
     #cd /home/rakesh/mids/210/PowerGridworld
-    rm -rf $(pwd)/data/outputs/ray_results/PPO/*
+    #rm -rf $(pwd)/data/outputs/ray_results/PPO/*
     python3 -u $(pwd)/examples/marl/rllib/heterogeneous/train_loop_hs.py \
         --stop-iters  100 \
         --stop-reward  0.0 \
-        --num-cpus 16 \
-        --num-gpus 0 \
+        --num-cpus 8 \
+        --num-gpus 1 \
         --local-dir $(pwd)/data/outputs/ray_results \
         --max-episode-steps 288 \
         --input-dir $(pwd)/data/inputs \
         --training-iteration 100 \
-        --log-level 'INFO'
+        --log-level 'INFO' \
+        --standalone-train true
         #--scenario-id '010' \
         
         
@@ -66,7 +67,8 @@ else
         --local-dir $(pwd)/data/outputs/ray_results \
         --max-episode-steps 288 \
         --input-dir $(pwd)/data/inputs \
-        --training-iteration 50
+        --training-iteration 50 \
+        --standalone-train true
 
 fi
 
