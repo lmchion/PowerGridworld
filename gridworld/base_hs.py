@@ -228,9 +228,13 @@ class HSMultiComponentEnv(MultiComponentEnv):
         grid_power_used = self.max_grid_power-kwargs['grid_power']
         es_power_used = kwargs['es_es_power_available']-kwargs['es_power']
 
-        self.unused_power +=kwargs['pv_power'] + kwargs['es_power']+ ignored_pv_power
+        self.unused_power += kwargs['pv_power'] + kwargs['es_power']+ ignored_pv_power
 
         #unused_es_storage=0
+        reward -= (10*self.unused_power)**2 * 3 * kwargs['max_grid_cost']
+
+        # reward -= mult_unused_power* ( self.unused_power ) * ((kwargs['max_grid_cost']*10)**3) * (self.minutes_per_step/60.0)   
+
         if self.is_terminal():
         #     # energy store is on its last step; check if battery has any juice left;
         #     # if it does ; penalize the remaining juice 

@@ -184,6 +184,7 @@ class HSEVChargingEnv(ComponentEnv):
         step_cost = self.current_cost * self._real_power # ( gridcost x grid usage + solar*solar usage + batter x batteryusage)
 
         step_meta = {}
+        reward = 0
 
         reward = -np.exp(step_cost+kwargs['max_grid_cost'] * self.state["real_power_unserved"])
         #reward = -(1+ reward)**3
