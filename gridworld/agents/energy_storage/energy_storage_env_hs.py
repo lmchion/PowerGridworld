@@ -36,7 +36,8 @@ class HSEnergyStorageEnv(ComponentEnv):
     ):
 
         super().__init__(name=name)
-        
+
+        self.discharge=None
         self.initial_storage_cost=initial_storage_cost
         self.current_cost = self.initial_storage_cost
 
@@ -67,18 +68,18 @@ class HSEnergyStorageEnv(ComponentEnv):
             self._observation_space, rescale=self.rescale_spaces)
 
         self._action_space = gym.spaces.Box(
-            shape=(1,),
-            low=-1.0,
-            high=1.0,
+            shape=(2,),
+            low=np.array([-1.0,0.0]),
+            high=np.array([0.0,1.0]),
             dtype=np.float64
         )
         self.action_space = maybe_rescale_box_space(
             self._action_space, rescale=self.rescale_spaces)
 
     def reset(self, *, seed=None, options=None, **kwargs):
-
+        self.power=[0.0,0.0]
         #super().reset(**kwargs)
-        
+        self.discharge=True
         self.simulation_step = 0
 
         init_storage = kwargs['init_storage'] if 'init_storage' in kwargs.keys() else None
@@ -167,23 +168,23 @@ class HSEnergyStorageEnv(ComponentEnv):
         
         if self._real_power < 0 :  # discharging
             step_cost = 0.0  
-            reward += (10 * kwargs['grid_cost'])**2
+            #reward += (10 * kwargs['grid_cost'])**2
         else:  # charging
             # es_cost = cost of charging (solar + grid) $/Kwh * efficiency % * power (Kw) * time (h)
             
             step_cost = self.delta_cost * self._real_power * self.control_interval_in_hr
 
-            reward -= 20 * (step_cost)
+            # reward -= 20 * (step_cost)
 
-            reward -= (20 * kwargs['grid_cost'] * kwargs['grid_power_consumed'] * self.control_interval_in_hr) ** 4
+            # reward -= (20 * kwargs['grid_cost'] * kwargs['grid_power_consumed'] * self.control_interval_in_hr) ** 4
 
-            reward += (40 * kwargs['max_grid_cost'] * kwargs['solar_power_consumed'] * self.control_interval_in_hr) 
+            # reward += (40 * kwargs['max_grid_cost'] * kwargs['solar_power_consumed'] * self.control_interval_in_hr) 
 
-            if self.current_storage < np.mean(self.storage_range):
-                reward += 10 * (step_cost)
+            # if self.current_storage < np.mean(self.storage_range):
+            #     reward += 10 * (step_cost)
 
-            if self.current_storage >= np.mean(self.storage_range):
-                reward -= 40 * (step_cost)
+            # if self.current_storage >= np.mean(self.storage_range):
+            #     reward -= 40 * (step_cost)
         #the reward has to be negative so higher reward for less cost
         reward = - np.exp(step_cost)
         #reward = -(1+reward)**3
@@ -223,9 +224,18 @@ class HSEnergyStorageEnv(ComponentEnv):
         if self.rescale_spaces:
             action = to_raw(action, self._action_space.low, self._action_space.high)
 
-        power = action[0] * self.max_power
+        if self.discharge:
+            power = action[1] * self.max_power
+            power = self.validate_power(power)
+            self.power=[0.0,power]
+            self.init_grid_capacity=kwargs['grid_power']
+            self.init_solar_capacity=kwargs['es_power']
+        else:
+            power = action[0] * self.max_power
+            power = self.validate_power(power)
+            
         
-        power = self.validate_power(power)
+        
 
         # solar_capacity =kwargs['power'][kwargs['labels'].index('pv')]
         # solar_cost=kwargs['cost'][kwargs['labels'].index('pv')]
@@ -235,25 +245,29 @@ class HSEnergyStorageEnv(ComponentEnv):
         solar_cost = kwargs['pv_cost']
         grid_cost = kwargs['grid_cost']
         grid_capacity=kwargs['grid_power']
+        
         solar_power_consumed = 0
         grid_power_consumed = 0
 
-        if power==0.0:
-            self.delta_cost=0.0
-            kwargs['es_power']=0.0
-            kwargs['solar_power_consumed']=0.0
-            kwargs['grid_power_consumed']=0.0
-        elif power < 0.0:  # power negative is charging
+
+        if power <= 0.0 and self.discharge==False:  # power negative is charging
+            battery_capacity=kwargs['es_power']
             delta_storage = self.charge_efficiency * power * self.control_interval_in_hr
             # first, take solar energy - the cheapest
-            solar_power_consumed=min(-power,solar_capacity)
+            #battery_power_consumed=min(battery_capacity,-power)
+            battery_power_consumed = -self.validate_power(-battery_capacity)
+
+            #solar_power_consumed=min(solar_capacity, -power-battery_power_consumed)
+            solar_power_consumed = -self.validate_power(-battery_power_consumed-solar_capacity)-battery_power_consumed
+
+            power = -max(-power , battery_power_consumed + solar_power_consumed  )
             
             # the rest, use the grid
-            grid_power_consumed=min( grid_capacity, -power - solar_power_consumed  )
-
+            grid_power_consumed=min( grid_capacity, -power -battery_power_consumed - solar_power_consumed  )
+            self.power[0]=power
            
             # calculate the weighted average cost of charging for the time interval
-            self.delta_cost = (solar_cost*solar_power_consumed + grid_cost*grid_power_consumed)  / (solar_power_consumed+ grid_power_consumed)
+            self.delta_cost =  grid_cost*grid_power_consumed  / -power if power!=0.0 else 0.0
 
             # update the current cost
             self.current_cost = (self.current_storage  * self.current_cost - delta_storage * self.delta_cost)/ ( self.current_storage - delta_storage  )
@@ -265,14 +279,15 @@ class HSEnergyStorageEnv(ComponentEnv):
             # kwargs['power'][kwargs['labels'].index('pv')]=solar_capacity-solar_power
             # kwargs['power'][kwargs['labels'].index('es')]=0.0
 
-            kwargs['pv_power']=max(0.0, solar_capacity-solar_power_consumed)
-            kwargs['grid_power']=max(0.0, grid_capacity-grid_power_consumed)
-            kwargs['es_power']=0.0
+            kwargs['pv_power']=max(0.0, self.init_solar_capacity-solar_power_consumed)
+            kwargs['grid_power']=max(0.0, self.init_grid_capacity-grid_power_consumed)
+            kwargs['es_power']=max(0.0, battery_capacity-battery_power_consumed)
 
             kwargs['solar_power_consumed']=solar_power_consumed
             kwargs['grid_power_consumed']=grid_power_consumed
 
-        elif power > 0.0:  # power positive is discharging
+
+        elif power >= 0.0 and self.discharge:  # power positive is discharging
             delta_storage = power * self.control_interval_in_hr / self.discharge_efficiency
 
             self.current_storage = max(self.current_storage-delta_storage, self.storage_range[0])
@@ -280,13 +295,21 @@ class HSEnergyStorageEnv(ComponentEnv):
             kwargs['es_power'] = power
             kwargs['solar_power_consumed']=0.0
             kwargs['grid_power_consumed']=0.0
+            self.delta_cost =0.0
+
 
         #kwargs['cost'][kwargs['labels'].index('es')]=self.current_cost
         kwargs['es_cost'] = 0 #self.current_cost
         #  Convert to the positive for load and  negative for generation convention.
         self._real_power = -power
         obs, kwargs = self.get_obs(**kwargs)
-        self.simulation_step += 1
+
+        if self.discharge:
+            self.discharge=False
+        else:
+            self.simulation_step += 1
+            self.discharge=True
+
         
         kwargs['es_es_power_available'] = kwargs['es_power']
 
@@ -296,9 +319,11 @@ class HSEnergyStorageEnv(ComponentEnv):
         rew_meta['step_meta']['solar_power_consumed'] = solar_power_consumed
         rew_meta['step_meta']['es_power_consumed'] = 0
         rew_meta['step_meta']['grid_power_consumed'] = grid_power_consumed
-        rew_meta['step_meta']['device_custom_info'] = {'current_storage': self.current_storage, 'power_ask': power, 
+        rew_meta['step_meta']['device_custom_info'] = {'current_storage': self.current_storage, 
+                                                       'power_ask': self.power, 
                                                        'solar_power_available': kwargs['pv_power'], 
-                                                       'grid_power_available':kwargs['grid_power'], 'es_power_available':kwargs['es_power']}
+                                                       'grid_power_available':kwargs['grid_power'], 
+                                                       'es_power_available':kwargs['es_power']}
 
         if power > 0.0: # discharging for setting the pv and grid power to 0.
             rew_meta['step_meta']['solar_power_consumed'] = 0.0

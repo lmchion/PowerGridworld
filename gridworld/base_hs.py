@@ -7,6 +7,7 @@ import pandas as pd
 
 from gridworld import MultiComponentEnv
 from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
+from gridworld.agents.energy_storage import HSEnergyStorageEnv
 
 
 class HSMultiComponentEnv(MultiComponentEnv):
@@ -175,6 +176,27 @@ class HSMultiComponentEnv(MultiComponentEnv):
                     self.meta_state['step_meta'] = step_meta
 
 
+        subcomp=[ x for x in self.envs if type(x)==HSEnergyStorageEnv ][0]
+        subcomp_kwargs = {k: v for k,
+                            v in kwargs.items() if k in subcomp._obs_labels}
+        subcomp_kwargs.update(self.meta_state)
+        subcomp_obs, reward, subcomp_done, flag, subcomp_meta = subcomp.step(
+            action[subcomp.name], **subcomp_kwargs)
+        self.reward +=reward
+        obs[subcomp.name] = subcomp_obs.copy()
+        dones.append(subcomp_done)
+        real_power += subcomp.real_power
+
+        if subcomp_meta:
+            step_meta = self.meta_state['step_meta']
+            
+            self.meta_state.update(subcomp_meta)
+
+            if subcomp_meta['step_meta']:
+                step_meta.extend([subcomp_meta['step_meta']])
+                self.meta_state['step_meta'] = step_meta
+
+
         # if self.rescale_spaces:
         #     obs["grid_cost"] = to_scaled(
         #         self.meta_state['grid_cost'], self.observation_space["grid_cost"].low, self.observation_space["grid_cost"].high)
@@ -296,3 +318,4 @@ class HSMultiComponentEnv(MultiComponentEnv):
     
     # def seed(self,seed : int ):
     #     return self.action_space.seed(seed)
+

@@ -146,18 +146,29 @@ class HSDataLoggerCallback(LoggerCallback):
             
             for i in tmp_timestamp_data.itertuples():
                 if i.device == 'storage':
+                    #discharge
+                    timestamp_data["es_action_d"] = i.action[1]
+                    timestamp_data["es_power_ask_d"] = i.device_custom_info["power_ask"][1]
+                    
+                    #charge
+                    timestamp_data["es_action_c"] = i.action[0]
+                    timestamp_data["es_power_ask_c"] = i.device_custom_info["power_ask"][0]
+                    
+                    #consolidated
                     timestamp_data["scenario_id"] = self._scenario_id
                     timestamp_data["grid_price"] = i.grid_cost
                     timestamp_data["es_cost"] = i.cost
                     timestamp_data["es_reward"] = i.reward
-                    timestamp_data["es_action"] = i.action[-1]
-                    timestamp_data["es_power_ask"] = i.device_custom_info["power_ask"]
+                    timestamp_data["es_action"] = sum(i.action)
+                    timestamp_data["es_power_ask"] = sum(i.device_custom_info["power_ask"])
                     timestamp_data["es_current_storage"] = i.device_custom_info["current_storage"]
                     timestamp_data["es_solar_power_consumed"] = i.solar_power_consumed
                     timestamp_data["es_grid_power_consumed"] = i.grid_power_consumed
                     timestamp_data["es_post_solar_power_available"] = i.device_custom_info["solar_power_available"]
                     timestamp_data["es_post_grid_power_available"] = i.device_custom_info["grid_power_available"]
                     timestamp_data["es_post_es_power_available"] = i.device_custom_info["es_power_available"]
+
+
                 elif i.device == 'ev-charging':
                     timestamp_data["ev_cost"] = i.cost
                     timestamp_data["ev_reward"] = i.reward
@@ -189,6 +200,9 @@ class HSDataLoggerCallback(LoggerCallback):
                     timestamp_data["solar_available_power"] = i.device_custom_info["pv_available_power"]
                     timestamp_data["solar_actionable_power"] = i.device_custom_info["pv_actionable_power"]
 
+            timestamp_data["ev_post_es_power_available"] = timestamp_data["es_post_es_power_available"] - timestamp_data["ev_es_power_consumed"]
+
+            timestamp_data["oth_dev_post_es_power_available"] = timestamp_data["ev_post_es_power_available"] - timestamp_data["oth_dev_es_power_consumed"]
 
             final_csv_rows.append(timestamp_data)
         

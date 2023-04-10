@@ -251,7 +251,10 @@ class HSDevicesEnv(ComponentEnv):
         rewmeta['step_meta']['solar_power_consumed'] = solar_power_consumed
         rewmeta['step_meta']['es_power_consumed'] = battery_power_consumed
         rewmeta['step_meta']['grid_power_consumed'] = grid_power_consumed
-        rewmeta['step_meta']['device_custom_info'] = {'power_ask': self._real_power, 'solar_power_available': kwargs['pv_power'], 'es_power_available':kwargs['es_power'], 'grid_power_available':kwargs['grid_power']}
+        rewmeta['step_meta']['device_custom_info'] = {'power_ask': self._real_power, 
+                                                      'solar_power_available': kwargs['pv_power'], 
+                                                      'es_power_available':kwargs['es_power'], 
+                                                      'grid_power_available':kwargs['grid_power']}
 
         obs_meta.update(rewmeta)
         self.index += 1
