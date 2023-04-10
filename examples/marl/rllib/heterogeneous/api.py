@@ -35,6 +35,6 @@ def push_data(logdir, csvname):
 
         # extracting response text
         response_status = r.status_code 
-        response_content = r.json()
         logger.info("data push to store; status: "+str(response_status))
+        response_content = r.json()
         logger.info("data push to store; response: "+str(response_content))

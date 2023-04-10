@@ -200,9 +200,11 @@ class HSDataLoggerCallback(LoggerCallback):
                     timestamp_data["solar_available_power"] = i.device_custom_info["pv_available_power"]
                     timestamp_data["solar_actionable_power"] = i.device_custom_info["pv_actionable_power"]
 
-            timestamp_data["ev_post_es_power_available"] = timestamp_data["es_post_es_power_available"] - timestamp_data["ev_es_power_consumed"]
+            timestamp_data["ev_post_es_power_available"] = round(timestamp_data["es_post_es_power_available"] - timestamp_data["ev_es_power_consumed"],5)+0.0
+            timestamp_data["ev_post_solar_power_available"] = round(timestamp_data["es_post_solar_power_available"] - timestamp_data["ev_solar_power_consumed"],5)+0.0
 
-            timestamp_data["oth_dev_post_es_power_available"] = timestamp_data["ev_post_es_power_available"] - timestamp_data["oth_dev_es_power_consumed"]
+            timestamp_data["oth_dev_post_es_power_available"] = round(timestamp_data["ev_post_es_power_available"] - timestamp_data["oth_dev_es_power_consumed"],5)+0.0
+            timestamp_data["oth_dev_post_solar_power_available"] = round(timestamp_data["ev_post_solar_power_available"] - timestamp_data["oth_dev_solar_power_consumed"],5)+0.0
 
             final_csv_rows.append(timestamp_data)
         

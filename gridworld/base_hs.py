@@ -253,7 +253,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
         self.unused_power += kwargs['pv_power'] + kwargs['es_power']+ ignored_pv_power
 
         #unused_es_storage=0
-        reward -= (10*self.unused_power)**2 * 3 * kwargs['max_grid_cost']
+        #reward -= (10*self.unused_power)**2 * 3 * kwargs['max_grid_cost']
 
         # reward -= mult_unused_power* ( self.unused_power ) * ((kwargs['max_grid_cost']*10)**3) * (self.minutes_per_step/60.0)   
 
@@ -264,7 +264,7 @@ class HSMultiComponentEnv(MultiComponentEnv):
             if kwargs['es_current_storage'] > es_min_storage:
                 unused_es_storage= (kwargs['es_current_storage'] - es_min_storage) * (60/self.minutes_per_step)
                 #reward -= mult_unused_storage*unused_es_storage * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
-            reward -= mult_unused_power* ( self.unused_power ) * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0) 
+            #reward -= mult_unused_power* ( self.unused_power ) * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0) 
             #reward -= (1+reward)**3        
         #reward -= np.exp( ( self.unused_power ) * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)  )      
 

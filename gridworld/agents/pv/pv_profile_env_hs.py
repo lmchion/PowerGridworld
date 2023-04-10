@@ -149,10 +149,10 @@ class HSPVEnv(ComponentEnv):
         self.index += 1
         rew, rew_meta = self.step_reward(**kwargs)
 
-        if action < 0.9:
-            rew -= (90-100*action.tolist()[0])**2
-        else:
-            rew += (5*action.tolist()[0])**2
+        # if action < 0.9:
+        #     rew -= (90-100*action.tolist()[0])**2
+        # else:
+        #     rew += (5*action.tolist()[0])**2
 
         obs_meta["pv_actionable_power"] = self._real_power 
 

@@ -187,6 +187,7 @@ class HSEnergyStorageEnv(ComponentEnv):
             #     reward -= 40 * (step_cost)
         #the reward has to be negative so higher reward for less cost
         reward = - np.exp(step_cost)
+        #reward = - step_cost
         #reward = -(1+reward)**3
 
         # solar_capacity = kwargs['pv_power']
@@ -229,7 +230,9 @@ class HSEnergyStorageEnv(ComponentEnv):
             power = self.validate_power(power)
             self.power=[0.0,power]
             self.init_grid_capacity=kwargs['grid_power']
-            self.init_solar_capacity=kwargs['es_power']
+            self.init_solar_capacity=kwargs['pv_power']
+
+            
         else:
             power = action[0] * self.max_power
             power = self.validate_power(power)
@@ -249,25 +252,33 @@ class HSEnergyStorageEnv(ComponentEnv):
         solar_power_consumed = 0
         grid_power_consumed = 0
 
-
         if power <= 0.0 and self.discharge==False:  # power negative is charging
             battery_capacity=kwargs['es_power']
             delta_storage = self.charge_efficiency * power * self.control_interval_in_hr
-            # first, take solar energy - the cheapest
-            #battery_power_consumed=min(battery_capacity,-power)
-            battery_power_consumed = -self.validate_power(-battery_capacity)
 
-            #solar_power_consumed=min(solar_capacity, -power-battery_power_consumed)
+            battery_power_consumed = -self.validate_power(-battery_capacity)
+            
             solar_power_consumed = -self.validate_power(-battery_power_consumed-solar_capacity)-battery_power_consumed
 
-            power = -max(-power , battery_power_consumed + solar_power_consumed  )
+            power = - min(self.max_power, battery_power_consumed+solar_power_consumed )
+            solar_power_consumed = -power - battery_power_consumed
+
+            ####################### NEW CODE ############################################
+            # set new power to take all leftover battery and solar up to the maximum charge
+            #new_power = - min(self.max_power, battery_power_consumed+solar_power_consumed )
+            # clip solar if leftover battery and solar is over the max charge 
+            #solar_power_consumed = -new_power - battery_power_consumed
             
-            # the rest, use the grid
-            grid_power_consumed=min( grid_capacity, -power -battery_power_consumed - solar_power_consumed  )
+            # this allows to take more grid if the power greater than the new power but forces to take as much as unused power as possible
+            #power= min(power, new_power)
+            #grid_power_consumed=min( grid_capacity, -power - battery_power_consumed - solar_power_consumed  )
+            ######################################################################################
+
             self.power[0]=power
+            action[0] = power / self.max_power
            
             # calculate the weighted average cost of charging for the time interval
-            self.delta_cost =  grid_cost*grid_power_consumed  / -power if power!=0.0 else 0.0
+            self.delta_cost =  (grid_cost*grid_power_consumed  / -power) if power!=0.0 else 0.0
 
             # update the current cost
             self.current_cost = (self.current_storage  * self.current_cost - delta_storage * self.delta_cost)/ ( self.current_storage - delta_storage  )
@@ -281,7 +292,7 @@ class HSEnergyStorageEnv(ComponentEnv):
 
             kwargs['pv_power']=max(0.0, self.init_solar_capacity-solar_power_consumed)
             kwargs['grid_power']=max(0.0, self.init_grid_capacity-grid_power_consumed)
-            kwargs['es_power']=max(0.0, battery_capacity-battery_power_consumed)
+            kwargs['es_power']=max(0.0, self.power[1]-battery_power_consumed)
 
             kwargs['solar_power_consumed']=solar_power_consumed
             kwargs['grid_power_consumed']=grid_power_consumed
