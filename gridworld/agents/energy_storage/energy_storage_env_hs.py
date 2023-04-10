@@ -254,14 +254,16 @@ class HSEnergyStorageEnv(ComponentEnv):
 
         if power <= 0.0 and self.discharge==False:  # power negative is charging
             battery_capacity=kwargs['es_power']
-            delta_storage = self.charge_efficiency * power * self.control_interval_in_hr
+            
 
             battery_power_consumed = -self.validate_power(-battery_capacity)
             
             solar_power_consumed = -self.validate_power(-battery_power_consumed-solar_capacity)-battery_power_consumed
 
+            ########################## CODE WORKS ############################################
             power = - min(self.max_power, battery_power_consumed+solar_power_consumed )
             solar_power_consumed = -power - battery_power_consumed
+            ######################################################################################
 
             ####################### NEW CODE ############################################
             # set new power to take all leftover battery and solar up to the maximum charge
@@ -273,6 +275,8 @@ class HSEnergyStorageEnv(ComponentEnv):
             #power= min(power, new_power)
             #grid_power_consumed=min( grid_capacity, -power - battery_power_consumed - solar_power_consumed  )
             ######################################################################################
+
+            delta_storage = self.charge_efficiency * power * self.control_interval_in_hr
 
             self.power[0]=power
             action[0] = power / self.max_power
