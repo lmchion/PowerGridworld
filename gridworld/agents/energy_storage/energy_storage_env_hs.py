@@ -275,9 +275,13 @@ class HSEnergyStorageEnv(ComponentEnv):
             # clip solar if leftover battery and solar is over the max charge 
             solar_power_consumed = -new_power 
             
+            power=-solar_power_consumed
+            grid_power_consumed=0.0
+
             # this allows to take more grid if the power greater than the new power but forces to take as much as unused power as possible
-            power= min(power, new_power)
-            grid_power_consumed=min( grid_capacity, -power  - solar_power_consumed  )
+            #power= min(power, new_power)
+            #grid_power_consumed=min( grid_capacity, -power  - solar_power_consumed  )
+            
             ######################################################################################
             power = power - battery_power_consumed
             
