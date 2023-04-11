@@ -1,0 +1,151 @@
+[H[2J[3Jrunning locally true
+iteration set 1
+env_set ['018', '020', '001', '023']
+env 018
+training_iteration 100
+
+
+OUT ::: 
+b'/home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO/PPO_018_fb56c_00000_0_framework=torch_2023-04-10_23-04-01/checkpoint_000100/'
+
+
+ERROR ::: 
+b"[INFO] train_hs.py:39: ARGS: {'env_name': 'buildings', 'system_load_rescale_factor': 0.6, 'max_episode_steps': 288, 'local_dir': '/home/ec2-user/PowerGridworld/data/outputs/ray_results', 'stop_timesteps': 10000000000, 'stop_iters': 100, 'stop_reward': 0.0, 'run': 'PPO', 'framework': 'torch', 'num_gpus': 1, 'num_cpus': 8, 'num_samples': 1, 'log_level': 'WARN', 'node_ip_address': '127.0.0.1', 'input_dir': '/home/ec2-user/PowerGridworld/data/inputs', 'last_checkpoint': 'None', 'training_iteration': '100', 'scenario_id': '018', 'standalone_train': True}"
+b'[INFO] train_hs.py:64: ENV CONFIG'
+b'\x1b[2m\x1b[36m(PPO pid=25794)\x1b[0m 2023-04-10 23:04:05,325\tWARNING algorithm_config.py:596 -- Cannot create PPOConfig from given `config_dict`! Property __stdout_file__ not supported.'
+b"\x1b[2m\x1b[36m(PPO pid=25794)\x1b[0m 2023-04-10 23:04:05,329\tINFO algorithm.py:506 -- Current log_level is WARN. For more information, set 'log_level': 'INFO' / 'DEBUG' or use the -v and -vv flags."
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26244)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26244)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26243)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26243)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26242)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26242)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26246)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26246)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26241)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26241)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26247)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26247)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b"\x1b[2m\x1b[36m(RolloutWorker pid=26240)\x1b[0m 2023-04-10 23:04:09,873\tWARNING env.py:166 -- Your env reset() method appears to take 'seed' or 'return_info' arguments. Note that these are not yet supported in RLlib. Seeding will take place using 'env.seed()' and the info dict will not be returned from reset."
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26240)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26240)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26248)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=26248)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+Finished 018 process in 2497.526822090149 seconds.
+$$$$$$$$$$$$$$$$$$$$$$ None
+prior_run_dir /home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO/PPO_018_fb56c_00000_0_framework=torch_2023-04-10_23-04-01
+output_dir /home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO
+[INFO] api.py:38: data push to store; status: 200
+[INFO] api.py:40: data push to store; response: {'result': 'inserted'}
+last_checkpoint None
+env 020
+training_iteration 100
+
+
+OUT ::: 
+b'/home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO/PPO_020_cc53e_00000_0_framework=torch_2023-04-10_23-45-39/checkpoint_000100/'
+
+
+ERROR ::: 
+b"[INFO] train_hs.py:39: ARGS: {'env_name': 'buildings', 'system_load_rescale_factor': 0.6, 'max_episode_steps': 288, 'local_dir': '/home/ec2-user/PowerGridworld/data/outputs/ray_results', 'stop_timesteps': 10000000000, 'stop_iters': 100, 'stop_reward': 0.0, 'run': 'PPO', 'framework': 'torch', 'num_gpus': 1, 'num_cpus': 8, 'num_samples': 1, 'log_level': 'WARN', 'node_ip_address': '127.0.0.1', 'input_dir': '/home/ec2-user/PowerGridworld/data/inputs', 'last_checkpoint': 'None', 'training_iteration': '100', 'scenario_id': '020', 'standalone_train': True}"
+b'[INFO] train_hs.py:64: ENV CONFIG'
+b'\x1b[2m\x1b[36m(PPO pid=19760)\x1b[0m 2023-04-10 23:45:43,388\tWARNING algorithm_config.py:596 -- Cannot create PPOConfig from given `config_dict`! Property __stdout_file__ not supported.'
+b"\x1b[2m\x1b[36m(PPO pid=19760)\x1b[0m 2023-04-10 23:45:43,392\tINFO algorithm.py:506 -- Current log_level is WARN. For more information, set 'log_level': 'INFO' / 'DEBUG' or use the -v and -vv flags."
+b"\x1b[2m\x1b[36m(RolloutWorker pid=20202)\x1b[0m 2023-04-10 23:45:47,794\tWARNING env.py:166 -- Your env reset() method appears to take 'seed' or 'return_info' arguments. Note that these are not yet supported in RLlib. Seeding will take place using 'env.seed()' and the info dict will not be returned from reset."
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20202)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20202)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20203)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20203)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20206)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20206)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20205)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20205)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20204)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20204)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20207)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20207)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20209)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20209)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20208)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=20208)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+Finished 020 process in 2487.0761756896973 seconds.
+$$$$$$$$$$$$$$$$$$$$$$ None
+prior_run_dir /home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO/PPO_020_cc53e_00000_0_framework=torch_2023-04-10_23-45-39
+output_dir /home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO
+[INFO] api.py:38: data push to store; status: 200
+[INFO] api.py:40: data push to store; response: {'result': 'inserted'}
+last_checkpoint None
+env 001
+training_iteration 100
+
+
+OUT ::: 
+b'/home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO/PPO_001_971c0_00000_0_framework=torch_2023-04-11_00-27-07/checkpoint_000100/'
+
+
+ERROR ::: 
+b"[INFO] train_hs.py:39: ARGS: {'env_name': 'buildings', 'system_load_rescale_factor': 0.6, 'max_episode_steps': 288, 'local_dir': '/home/ec2-user/PowerGridworld/data/outputs/ray_results', 'stop_timesteps': 10000000000, 'stop_iters': 100, 'stop_reward': 0.0, 'run': 'PPO', 'framework': 'torch', 'num_gpus': 1, 'num_cpus': 8, 'num_samples': 1, 'log_level': 'WARN', 'node_ip_address': '127.0.0.1', 'input_dir': '/home/ec2-user/PowerGridworld/data/inputs', 'last_checkpoint': 'None', 'training_iteration': '100', 'scenario_id': '001', 'standalone_train': True}"
+b'[INFO] train_hs.py:64: ENV CONFIG'
+b'\x1b[2m\x1b[36m(PPO pid=12334)\x1b[0m 2023-04-11 00:27:11,264\tWARNING algorithm_config.py:596 -- Cannot create PPOConfig from given `config_dict`! Property __stdout_file__ not supported.'
+b"\x1b[2m\x1b[36m(PPO pid=12334)\x1b[0m 2023-04-11 00:27:11,267\tINFO algorithm.py:506 -- Current log_level is WARN. For more information, set 'log_level': 'INFO' / 'DEBUG' or use the -v and -vv flags."
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12782)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12782)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12781)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12781)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12780)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12780)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b"\x1b[2m\x1b[36m(RolloutWorker pid=12777)\x1b[0m 2023-04-11 00:27:15,842\tWARNING env.py:166 -- Your env reset() method appears to take 'seed' or 'return_info' arguments. Note that these are not yet supported in RLlib. Seeding will take place using 'env.seed()' and the info dict will not be returned from reset."
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12777)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12777)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12778)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12778)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12779)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12779)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12785)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12785)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12784)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=12784)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+Finished 001 process in 2491.9757709503174 seconds.
+$$$$$$$$$$$$$$$$$$$$$$ None
+prior_run_dir /home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO/PPO_001_971c0_00000_0_framework=torch_2023-04-11_00-27-07
+output_dir /home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO
+[INFO] api.py:38: data push to store; status: 200
+[INFO] api.py:40: data push to store; response: {'result': 'inserted'}
+last_checkpoint None
+env 023
+training_iteration 100
+
+
+OUT ::: 
+b'/home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO/PPO_023_64f25_00000_0_framework=torch_2023-04-11_01-08-39/checkpoint_000100/'
+
+
+ERROR ::: 
+b"[INFO] train_hs.py:39: ARGS: {'env_name': 'buildings', 'system_load_rescale_factor': 0.6, 'max_episode_steps': 288, 'local_dir': '/home/ec2-user/PowerGridworld/data/outputs/ray_results', 'stop_timesteps': 10000000000, 'stop_iters': 100, 'stop_reward': 0.0, 'run': 'PPO', 'framework': 'torch', 'num_gpus': 1, 'num_cpus': 8, 'num_samples': 1, 'log_level': 'WARN', 'node_ip_address': '127.0.0.1', 'input_dir': '/home/ec2-user/PowerGridworld/data/inputs', 'last_checkpoint': 'None', 'training_iteration': '100', 'scenario_id': '023', 'standalone_train': True}"
+b'[INFO] train_hs.py:64: ENV CONFIG'
+b'\x1b[2m\x1b[36m(PPO pid=21515)\x1b[0m 2023-04-11 01:08:43,956\tWARNING algorithm_config.py:596 -- Cannot create PPOConfig from given `config_dict`! Property __stdout_file__ not supported.'
+b"\x1b[2m\x1b[36m(PPO pid=21515)\x1b[0m 2023-04-11 01:08:43,960\tINFO algorithm.py:506 -- Current log_level is WARN. For more information, set 'log_level': 'INFO' / 'DEBUG' or use the -v and -vv flags."
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22032)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22032)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b"\x1b[2m\x1b[36m(RolloutWorker pid=22028)\x1b[0m 2023-04-11 01:08:48,464\tWARNING env.py:166 -- Your env reset() method appears to take 'seed' or 'return_info' arguments. Note that these are not yet supported in RLlib. Seeding will take place using 'env.seed()' and the info dict will not be returned from reset."
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22028)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22028)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22029)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22029)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22034)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22034)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22031)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22031)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22030)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22030)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22035)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22035)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22033)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=22033)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+Finished 023 process in 2569.6980471611023 seconds.
+$$$$$$$$$$$$$$$$$$$$$$ None
+prior_run_dir /home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO/PPO_023_64f25_00000_0_framework=torch_2023-04-11_01-08-39
+output_dir /home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO
+[INFO] api.py:38: data push to store; status: 200
+[INFO] api.py:40: data push to store; response: {'result': 'inserted'}
+last_checkpoint None

@@ -13,7 +13,10 @@ from ray.air.checkpoint import Checkpoint
 from ray.cluster_utils import Cluster
 from ray.tune.registry import register_env
 from ray.tune.schedulers import PopulationBasedTraining
-
+from ray.tune.suggest.hyperopt import HyperOptSearch
+from hyperopt import hp
+from ray import tune
+import numpy as np
 
 
 from gridworld.log import logger
@@ -32,6 +35,16 @@ def env_creator(config: dict):
     #env.action_space.seed(123)
 
     return env
+
+# Postprocess the perturbed config to ensure it's still valid
+def explore(config):
+        # ensure we collect enough timesteps to do sgd
+        if config["train_batch_size"] < config["sgd_minibatch_size"] * 2:
+            config["train_batch_size"] = config["sgd_minibatch_size"] * 2
+        # ensure we run at least one sgd iter
+        if config["num_sgd_iter"] < 1:
+            config["num_sgd_iter"] = 1
+        return config
 
 def main(**args):
 
@@ -105,34 +118,68 @@ def main(**args):
     # so that results are reproducible, but 34 CPU workers were used in training 
     # -- expect slower performence if using fewer.
     hyperparam_config = {
-        'lambda' : 1.0,
-        'gamma' : 1.0,
-        'kl_coeff' : 0.2,
-        "lr": 1e-3,
-        "num_sgd_iter": 10,
+        # 'lambda' : 0.98,
+        # 'kl_target': 0.1,
+        # 'gamma' : 0.98,
+        # 'kl_coeff' : 1.0,
+        # "lr": 8e-5,
+        # "num_sgd_iter": 20,
+        # "entropy_coeff": 0.014,
+        # "clip_param" : 0.3,
+        # 'vf_loss_coeff': 0.75
+        # "train_batch_size": rollout_fragment_length*30,   # ensure reproducible
+        # #"rollout_fragment_length": rollout_fragment_length*num_workers,
+        # "sgd_minibatch_size" : rollout_fragment_length,
+        # "rollout_fragment_length": 'auto',
+        # "batch_mode": "complete_episodes",
+        # "observation_filter": "MeanStdFilter",
+            'lr':tune.loguniform(5e-5,0.0001),
+      'sgd_minibatch_size': tune.choice([64,128,256]),
+      'entropy_coeff': tune.loguniform(0.00000001, 0.1),
+        'clip_param':tune.choice([0.1,0.2,0.3,0.4]),
+        "vf_loss_coeff": tune.uniform(0,1),
+        'lambda': tune.choice([0.9, 0.95, 0.98, 0.99, 0.995,0.999]),
+        'kl_target': tune.choice([0.001,0.01,0.1]),
+    }
+
+    
+    hyperparam_config = {  'lambda' : 0.95,
+         'gamma' : 0.98,
+        'kl_coeff' : 1.0,
+        "lr": 1e-4,
+        "num_sgd_iter": 20,
         "entropy_coeff": 0.0,
-        "clip_param" : 0.3,
-        "train_batch_size": rollout_fragment_length,   # ensure reproducible
+        "clip_param" : 0.2,
+        "train_batch_size": rollout_fragment_length*10,   # ensure reproducible
         #"rollout_fragment_length": rollout_fragment_length*num_workers,
         "sgd_minibatch_size" : rollout_fragment_length,
         "rollout_fragment_length": 'auto',
         "batch_mode": "complete_episodes",
         "observation_filter": "MeanStdFilter",
-    }
+                 }
 
+     
     hyperparam_mutations = {
-        "lambda": [0.9, 0.8, 1.0],
-        "clip_param": [0.01,0.1, 0.5],
-        "lr": [1e-3, 1e-4, 1e-5],
-        "num_sgd_iter": [1, 10, 30],
-        "sgd_minibatch_size": [rollout_fragment_length/2, rollout_fragment_length*3/4, rollout_fragment_length],
+    "entropy_coeff": lambda: tune.loguniform(0.00000001, 0.1),
+      "lr": lambda: tune.loguniform(5e-5, 0.0001),
+      "sgd_minibatch_size": [ 32, 64, 128, 256, 512],
+      "lambda": [0.9, 0.95, 0.98, 0.99, 0.995,0.999],
+      'clip_param': [0.1,0.2,0.3,0.4],
+      "vf_loss_coeff": lambda: np.random.uniform(0,1),
+      'kl_target': [0.001,0.01,0.1]
+
+        #"lambda": [0.9, 0.8, 1.0],
+        #"clip_param": [0.01,0.1, 0.5],
+        #"lr": [1e-3, 1e-4, 1e-5],
+        #"num_sgd_iter": [1, 10, 30],
+        #"sgd_minibatch_size": [rollout_fragment_length/2, rollout_fragment_length*3/4, rollout_fragment_length],
     }
 
     pbt = PopulationBasedTraining(
-        #time_attr="time_total_s",
+        time_attr="time_total_s",
         mode="max",
-        #perturbation_interval=120,
-        resample_probability=0.50,
+        perturbation_interval=2,
+        resample_probability=0.25,
         # Specifies the mutations of these hyperparams
         hyperparam_mutations=hyperparam_mutations,
         require_attrs=False
@@ -148,9 +195,10 @@ def main(**args):
         checkpoint_score_attr="episode_reward_mean",
         keep_checkpoints_num=100,
         stop=stop,
-        callbacks=[HSDataLoggerCallback(scenario_id)],
+       callbacks=[HSDataLoggerCallback(scenario_id)],
         restore=checkpoint,
         #scheduler=pbt,
+        #search_alg=algo,
         #resume="AUTO",
        # gamma=1.0,
         config={
