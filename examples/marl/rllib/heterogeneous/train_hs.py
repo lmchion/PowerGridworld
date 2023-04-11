@@ -133,12 +133,18 @@ def main(**args):
         # "rollout_fragment_length": 'auto',
         # "batch_mode": "complete_episodes",
         # "observation_filter": "MeanStdFilter",
-            'lr':tune.loguniform(5e-5,0.0001),
-      'sgd_minibatch_size': tune.choice([64,128,256]),
-      'entropy_coeff': tune.loguniform(0.00000001, 0.1),
-        'clip_param':tune.choice([0.1,0.2,0.3,0.4]),
-        "vf_loss_coeff": tune.uniform(0,1),
         'lambda': tune.choice([0.9, 0.95, 0.98, 0.99, 0.995,0.999]),
+        'gamma'  : tune.choice([0.9, 0.95, 0.98, 0.99, 0.995,0.999]),
+        'kl_coeff' : tune.choice([0.3, 0.5, 0.7, 1.0]),
+        'lr':tune.loguniform(5e-5,1e-4, 1e-3),
+        "num_sgd_iter": tune.choice([10,20,30]),
+        'entropy_coeff': tune.loguniform(0.00000001, 0.1),
+        'clip_param':tune.choice([0.1,0.2,0.3,0.4]),
+      'sgd_minibatch_size': tune.choice([64,128,288]),
+        "train_batch_size": tune.choice([rollout_fragment_length*10,rollout_fragment_length*20,rollout_fragment_length*30]),
+         "batch_mode": "complete_episodes",
+        "observation_filter": "MeanStdFilter",
+        "vf_loss_coeff": tune.uniform(0,1),
         'kl_target': tune.choice([0.001,0.01,0.1]),
     }
 
@@ -157,16 +163,44 @@ def main(**args):
         "batch_mode": "complete_episodes",
         "observation_filter": "MeanStdFilter",
                  }
+    
+    hyperparam_config = { 'clip_param': 0.2,
+                          'entropy_coeff': 0.0,
+ 'gamma': 0.98,
+ 'kl_coeff': 1.0,
+ 'kl_target': 0.1,
+ 'lambda': 0.95,
+ 'lr': 0.0001,
+ 'num_sgd_iter': 20,
+ 'sgd_minibatch_size': 288,
+ 'train_batch_size': 2880,
+ 'vf_loss_coeff': 0.016068202299156287,
+  "rollout_fragment_length": 'auto',
+        "batch_mode": "complete_episodes",
+        "observation_filter": "MeanStdFilter",}
 
      
     hyperparam_mutations = {
-    "entropy_coeff": lambda: tune.loguniform(0.00000001, 0.1),
-      "lr": lambda: tune.loguniform(5e-5, 0.0001),
-      "sgd_minibatch_size": [ 32, 64, 128, 256, 512],
-      "lambda": [0.9, 0.95, 0.98, 0.99, 0.995,0.999],
-      'clip_param': [0.1,0.2,0.3,0.4],
-      "vf_loss_coeff": lambda: np.random.uniform(0,1),
-      'kl_target': [0.001,0.01,0.1]
+    # "entropy_coeff": lambda: tune.loguniform(0.00000001, 0.1),
+    #   "lr": lambda: tune.loguniform(5e-5, 0.0001),
+    #   "sgd_minibatch_size": [ 32, 64, 128, 256, 512],
+    #   "lambda": [0.9, 0.95, 0.98, 0.99, 0.995,0.999],
+    #   'clip_param': [0.1,0.2,0.3,0.4],
+    #   "vf_loss_coeff": lambda: np.random.uniform(0,1),
+    #   'kl_target': [0.001,0.01,0.1]
+
+                'lambda': tune.choice([0.9, 0.95, 0.98, 0.99, 0.995,0.999]),
+        'gamma'  : tune.choice([0.9, 0.95, 0.98, 0.99, 0.995,0.999]),
+        'kl_coeff' : tune.choice([0.3, 0.5, 0.7, 1.0]),
+        'lr':tune.loguniform(5e-5,1e-4, 1e-3),
+        "num_sgd_iter": tune.choice([10,20,30]),
+        'entropy_coeff': tune.loguniform(0.00000001, 0.1),
+        'clip_param':tune.choice([0.1,0.2,0.3,0.4]),
+      'sgd_minibatch_size': tune.choice([64,128,288]),
+        "train_batch_size": tune.choice([rollout_fragment_length*10,rollout_fragment_length*20,rollout_fragment_length*30]),
+        "vf_loss_coeff": tune.uniform(0,1),
+        'kl_target': tune.choice([0.001,0.01,0.1]),
+
 
         #"lambda": [0.9, 0.8, 1.0],
         #"clip_param": [0.01,0.1, 0.5],
