@@ -44,8 +44,12 @@ class HSEnergyStorageEnv(ComponentEnv):
         self.storage_range = storage_range
         self.initial_storage_mean = initial_storage_mean
         self.initial_storage_std = initial_storage_std
-        self.charge_efficiency = charge_efficiency
-        self.discharge_efficiency = discharge_efficiency
+        #self.charge_efficiency = charge_efficiency
+        #self.discharge_efficiency = discharge_efficiency
+        self.charge_efficiency = 1.0
+        self.discharge_efficiency = 1.0
+
+
         self.max_power = max_power
         self.current_storage = None
         self.rescale_spaces = rescale_spaces
@@ -261,21 +265,22 @@ class HSEnergyStorageEnv(ComponentEnv):
             solar_power_consumed = -self.validate_power(-battery_power_consumed-solar_capacity)-battery_power_consumed
 
             ########################## CODE WORKS ############################################
-            power = - min(self.max_power, battery_power_consumed+solar_power_consumed )
-            solar_power_consumed = -power - battery_power_consumed
+            #power = - min(self.max_power, battery_power_consumed+solar_power_consumed )
+            #solar_power_consumed = -power - battery_power_consumed
             ######################################################################################
 
             ####################### NEW CODE ############################################
             # set new power to take all leftover battery and solar up to the maximum charge
-            #new_power = - min(self.max_power, battery_power_consumed+solar_power_consumed )
+            new_power = - min(self.max_power,  solar_power_consumed )
             # clip solar if leftover battery and solar is over the max charge 
-            #solar_power_consumed = -new_power - battery_power_consumed
+            solar_power_consumed = -new_power 
             
             # this allows to take more grid if the power greater than the new power but forces to take as much as unused power as possible
-            #power= min(power, new_power)
-            #grid_power_consumed=min( grid_capacity, -power - battery_power_consumed - solar_power_consumed  )
+            power= min(power, new_power)
+            grid_power_consumed=min( grid_capacity, -power  - solar_power_consumed  )
             ######################################################################################
-
+            power = power - battery_power_consumed
+            
             delta_storage = self.charge_efficiency * power * self.control_interval_in_hr
 
             self.power[0]=power
