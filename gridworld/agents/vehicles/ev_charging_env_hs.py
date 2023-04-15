@@ -83,27 +83,29 @@ class HSEVChargingEnv(ComponentEnv):
 
         # Bounds on the observation space variables.
         obs_bounds = OrderedDict({
-            "time": (0, self.simulation_times[-1]),
-            "num_active_vehicles": (
-                0, self.num_vehicles),
-            "real_power_consumed": (
-                0, self.num_vehicles * self.max_charge_rate_kw),
-            "real_power_demand": (
-                0, self.num_vehicles * self._df["energy_required_kwh"].max()),
-            "mean_charge_rate_deficit": (
-                0, self._df["energy_required_kwh"].max() / (self.minutes_per_step / 60.)),
+            # "time": (0, self.simulation_times[-1]),
+            # "num_active_vehicles": (
+            #     0, self.num_vehicles),
+            # "real_power_consumed": (
+            #     0, self.num_vehicles * self.max_charge_rate_kw),
+            # "real_power_demand": (
+            #     0, self.num_vehicles * self._df["energy_required_kwh"].max()),
+            # "mean_charge_rate_deficit": (
+            #     0, self._df["energy_required_kwh"].max() / (self.minutes_per_step / 60.)),
+            
+            
+            # "ev_pv_power_available" : (
+            #     0, max_pv_power), 
+            # "ev_pv_power_consumed" : (
+            #     0, max_charge_rate_kw), 
+            # "ev_es_power_available" : (
+            #     0, max_es_power), 
+            # "ev_es_power_consumed" : (
+            #     0, max_charge_rate_kw), 
             "real_power_unserved": (
                 0, self._df["energy_required_kwh"].max()),
             "current_cost" : (
                 0, max_charge_cost),
-            "ev_pv_power_available" : (
-                0, max_pv_power), 
-            "ev_pv_power_consumed" : (
-                0, max_charge_rate_kw), 
-            "ev_es_power_available" : (
-                0, max_es_power), 
-            "ev_es_power_consumed" : (
-                0, max_charge_rate_kw), 
             "ev_grid_power_available" : (
                 0, max_grid_power), 
             "ev_grid_power_consumed" : (
@@ -274,13 +276,13 @@ class HSEVChargingEnv(ComponentEnv):
         self._update("real_power_unserved", unserved)
 
         # Update the state dict.
-        self._update("time", self.time)
-        self._update("num_active_vehicles", self.vehicle_multiplier * len(charging_vehicles))
-        self._update("real_power_consumed", self.vehicle_multiplier * real_power_consumed)
-        self._update("real_power_demand", self.vehicle_multiplier * real_power_demand)
-        self._update(
-            "mean_charge_rate_deficit",
-            0 if len(charge_rate_deficit) == 0 else np.mean(charge_rate_deficit))
+        # self._update("time", self.time)
+        # self._update("num_active_vehicles", self.vehicle_multiplier * len(charging_vehicles))
+        # self._update("real_power_consumed", self.vehicle_multiplier * real_power_consumed)
+        # self._update("real_power_demand", self.vehicle_multiplier * real_power_demand)
+        # self._update(
+        #     "mean_charge_rate_deficit",
+        #     0 if len(charge_rate_deficit) == 0 else np.mean(charge_rate_deficit))
         
         
         # Update the real power attribute needed for component envs.
@@ -331,10 +333,10 @@ class HSEVChargingEnv(ComponentEnv):
         # Update Observation space with availability and consumption information.
         # attach values to observation here
         self._update("current_cost", self.current_cost)
-        self._update("ev_pv_power_available", kwargs['pv_power'])
-        self._update("ev_pv_power_consumed", solar_power_consumed)
-        self._update("ev_es_power_available", kwargs['es_power'])
-        self._update("ev_es_power_consumed", battery_power_consumed)
+        # self._update("ev_pv_power_available", kwargs['pv_power'])
+        # self._update("ev_pv_power_consumed", solar_power_consumed)
+        # self._update("ev_es_power_available", kwargs['es_power'])
+        # self._update("ev_es_power_consumed", battery_power_consumed)
         self._update("ev_grid_power_available", kwargs['grid_power'])
         self._update("ev_grid_power_consumed", grid_power_consumed)
 

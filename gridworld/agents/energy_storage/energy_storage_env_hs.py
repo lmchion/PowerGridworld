@@ -60,12 +60,12 @@ class HSEnergyStorageEnv(ComponentEnv):
 
         self.control_interval_in_hr = control_timedelta.seconds / 3600.0
 
-        self._obs_labels =["stage_of_charge", "cost", "es_pv_power_available", "es_pv_power_consumed", "es_grid_power_consumed", "es_grid_power_available"]
+        self._obs_labels =["stage_of_charge", "cost", "es_grid_power_consumed"]
 
         self._observation_space = gym.spaces.Box(
-            shape=(6,),
-            low=np.array([self.storage_range[0],  0.0,               0.0, 0.0, 0.0,0.0]),
-            high=np.array([self.storage_range[1], max_storage_cost,  max_pv_power, self.max_power, self.max_power,max_grid_power]),
+            shape=(3,),
+            low=np.array([self.storage_range[0],  0.0,               0.0]),
+            high=np.array([self.storage_range[1], max_storage_cost,  max_grid_power]),
             dtype=np.float64
         )
         self.observation_space = maybe_rescale_box_space(
@@ -81,7 +81,7 @@ class HSEnergyStorageEnv(ComponentEnv):
             self._action_space, rescale=self.rescale_spaces)
 
     def reset(self, *, seed=None, options=None, **kwargs):
-        self.power=[0.0,0.0]
+        self.power=[0.0, 0.0]
         #super().reset(**kwargs)
         self.discharge=True
         self.simulation_step = 0
@@ -147,8 +147,7 @@ class HSEnergyStorageEnv(ComponentEnv):
 
         # Update the observation space with status of availability and consumption.
         # append "es_pv_power_available", "es_pv_power_consumed", "es_grid_power_consumed" to observation
-        raw_obs = np.array([self.current_storage, self.current_cost, kwargs['pv_power'], 
-                            kwargs['solar_power_consumed'], kwargs['grid_power_consumed'], kwargs['grid_power']])
+        raw_obs = np.array([self.current_storage, self.current_cost, kwargs['grid_power']])
 
         if self.rescale_spaces:
             obs = to_scaled(raw_obs, self._observation_space.low, self._observation_space.high)

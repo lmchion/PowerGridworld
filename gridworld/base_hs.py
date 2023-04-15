@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 
 from gridworld import MultiComponentEnv
-from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
 from gridworld.agents.energy_storage import HSEnergyStorageEnv
+from gridworld.utils import maybe_rescale_box_space, to_raw, to_scaled
 
 
 class HSMultiComponentEnv(MultiComponentEnv):

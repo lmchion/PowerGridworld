@@ -1,24 +1,23 @@
 """Script for running single-machine training.  If you want to run rllib on a 
 cluster see, e.g., https://docs.ray.io/en/latest/cluster/deploy.html."""
 import json
+import pprint
+import random
 import sys
 import time
 from collections import OrderedDict
-import random
+
 import gymnasium as gym
+import numpy as np
 import ray
 from callbacks import HSAgentTrainingCallback, HSDataLoggerCallback
+from hyperopt import hp
 from ray import tune
 from ray.air.checkpoint import Checkpoint
 from ray.cluster_utils import Cluster
 from ray.tune.registry import register_env
 from ray.tune.schedulers import PopulationBasedTraining
 from ray.tune.suggest.hyperopt import HyperOptSearch
-from hyperopt import hp
-from ray import tune
-import numpy as np
-import pprint
-
 
 from gridworld.log import logger
 from gridworld.scenarios.heterogeneous_hs import make_env_config
@@ -118,7 +117,7 @@ def main(**args):
     # Configure hyperparameters of the RL algorithm.  train_batch_size is fixed
     # so that results are reproducible, but 34 CPU workers were used in training 
     # -- expect slower performence if using fewer.
-    hyper_tunning=False
+    hyper_tunning = False
     if hyper_tunning:
         hyperparam_config = {
             'lambda': tune.choice([0.9, 0.95, 0.98, 0.99, 0.995,0.999]),
@@ -161,7 +160,8 @@ def main(**args):
 
     #hp_config_set='orig'
     #hp_config_set='grid_charge'
-    hp_config_set='solar_charge'
+    #hp_config_set='solar_charge'
+    hp_config_set = 'obs_experiment'
 
     #original calibration
     if hp_config_set=='orig':
@@ -179,7 +179,7 @@ def main(**args):
             "rollout_fragment_length": 'auto',
             "batch_mode": "complete_episodes",
             "observation_filter": "MeanStdFilter",
-                        }
+        }
         
     #calibration when grid is allowed to charg
     if hp_config_set=='grid_charge':
@@ -216,7 +216,21 @@ def main(**args):
                         "batch_mode": "complete_episodes",
                         "observation_filter": "MeanStdFilter",}
 
-
+    if hp_config_set == 'obs_experiment':
+        hyperparam_config = {'clip_param': 0.2,
+                            'entropy_coeff': 0.0,
+                            'gamma': 0.98,
+                            'kl_coeff': 1.0,
+                            'kl_target': 0.001,
+                            'lambda': 0.95,
+                            'lr': 0.0001,
+                            'num_sgd_iter': 20,
+                            'sgd_minibatch_size': 288,
+                            'train_batch_size': 2880,
+                            'vf_loss_coeff': 0.056917598359363275,
+                            "rollout_fragment_length": 'auto',
+                            "batch_mode": "complete_episodes",
+                            "observation_filter": "MeanStdFilter"}
      
 
 

@@ -84,25 +84,15 @@ class HSDevicesEnv(ComponentEnv):
         for num,elem in enumerate(self._obs_labels ):
             obs_bounds[elem]=(0.0, max(list(self.data_pd[elem])))
 
-        self._obs_labels.extend(["oth_pv_power_available", 
-                                "oth_pv_power_consumed", 
-                                "oth_es_power_available", 
-                                "oth_es_power_consumed", 
-                                "oth_grid_power_available", 
-                                "oth_grid_power_consumed"])
-        
-        obs_bounds["oth_pv_power_available"] = (0.0, max_pv_power)
-        obs_bounds["oth_pv_power_consumed"] = (0.0, max(list(self.data_pd[elem])))
-        obs_bounds["oth_es_power_available"] = (0.0, max_es_power)
-        obs_bounds["oth_es_power_consumed"] = (0.0, max(list(self.data_pd[elem])))
-        obs_bounds["oth_grid_power_available"] = (0.0,max_grid_power)
+        self._obs_labels.extend(["oth_grid_power_consumed"])
+
         obs_bounds["oth_grid_power_consumed"] = (0.0, max(list(self.data_pd[elem])))
 
         # Create the optionally rescaled gym spaces.
         self._observation_space = gym.spaces.Box(
-            shape=(len(self.obs_labels),),
-            low=np.array([v[0] for k, v in obs_bounds.items() if k in self.obs_labels]),
-            high=np.array([v[1] for k, v in obs_bounds.items() if k in self.obs_labels]),
+            shape=(len(self._obs_labels),),
+            low=np.array([v[0] for k, v in obs_bounds.items() if k in self._obs_labels]),
+            high=np.array([v[1] for k, v in obs_bounds.items() if k in self._obs_labels]),
             dtype=np.float64)
 
         self.observation_space = maybe_rescale_box_space(
@@ -123,12 +113,7 @@ class HSDevicesEnv(ComponentEnv):
         # Update Observation space with availability and consumption information.
         # attach values to observation here
         raw_obs = np.append(raw_obs, 
-                        [kwargs['pv_power'],
-                        kwargs['solar_power_consumed'],
-                        kwargs['es_power'],
-                        kwargs['es_power_consumed'],
-                        kwargs['grid_power'],
-                        kwargs['grid_power_consumed']])
+                        [kwargs['grid_power_consumed']])
         
         if self.rescale_spaces:
             obs = to_scaled(raw_obs, self._observation_space.low, self._observation_space.high)
