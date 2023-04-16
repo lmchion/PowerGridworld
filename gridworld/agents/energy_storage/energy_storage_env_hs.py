@@ -60,7 +60,8 @@ class HSEnergyStorageEnv(ComponentEnv):
 
         self.control_interval_in_hr = control_timedelta.seconds / 3600.0
 
-        self._obs_labels =["stage_of_charge", "cost", "es_pv_power_available", "es_pv_power_consumed", "es_grid_power_consumed", "es_grid_power_available"]
+        self._obs_labels =["stage_of_charge", "cost", "es_pv_power_available", "es_pv_power_consumed", 
+                           "es_grid_power_consumed", "es_grid_power_available"]
 
         self._observation_space = gym.spaces.Box(
             shape=(6,),
@@ -271,6 +272,8 @@ class HSEnergyStorageEnv(ComponentEnv):
 
             ####################### NEW CODE ############################################
             # set new power to take all leftover battery and solar up to the maximum charge
+            #new_power= -min ( 12 , 6) = -6
+            #solar_power_consumed = 6
             new_power = - min(self.max_power,  solar_power_consumed )
             # clip solar if leftover battery and solar is over the max charge 
             solar_power_consumed = -new_power 
@@ -279,10 +282,12 @@ class HSEnergyStorageEnv(ComponentEnv):
             #grid_power_consumed=0.0
 
             # this allows to take more grid if the power greater than the new power but forces to take as much as unused power as possible
+            #power = min (-12, -6) = -12 
             power= min(power, new_power)
             grid_power_consumed=min( grid_capacity, -power  - solar_power_consumed  )
             
             ######################################################################################
+            #power = -12 - 6 = -18
             power = power - battery_power_consumed
             
             delta_storage = self.charge_efficiency * power * self.control_interval_in_hr
