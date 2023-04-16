@@ -288,7 +288,7 @@ class HSEnergyStorageEnv(ComponentEnv):
             delta_storage = self.charge_efficiency * power * self.control_interval_in_hr
 
             self.power[0]=power
-            action[0] = power / self.max_power
+            action[0] = power / (self.max_power +battery_power_consumed)
            
             # calculate the weighted average cost of charging for the time interval
             self.delta_cost =  (grid_cost*grid_power_consumed  / -power) if power!=0.0 else 0.0
