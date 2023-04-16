@@ -85,7 +85,7 @@ def main(**args):
                 
             print("prior_run_dir",prior_run_dir)
             print("output_dir",output_dir)
-            api.push_data(prior_run_dir, "final_validation")
+            #api.push_data(prior_run_dir, "final_validation")
 
             print('last_checkpoint',last_checkpoint)
 

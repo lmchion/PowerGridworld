@@ -161,8 +161,8 @@ class HSDevicesEnv(ComponentEnv):
         step_cost = self.current_cost * self._real_power * (self.minutes_per_step/60.0)
 
         step_meta = {}
-        reward = - np.exp(step_cost)
-        #reward = - step_cost
+        #reward = - np.exp(step_cost)
+        reward = - step_cost
         #reward = -(1+reward)**3
 
         # # This is the final sub-environment which gets to act in the system. On each step,

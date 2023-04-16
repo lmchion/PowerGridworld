@@ -160,8 +160,10 @@ def main(**args):
          )
 
     #hp_config_set='orig'
-    #hp_config_set='grid_charge'
-    hp_config_set='solar_charge'
+    hp_config_set='grid_charge'
+    #hp_config_set='solar_charge'
+    #hp_config_set = 'obs_experiment'
+    #hp_config_set = None
 
     #original calibration
     if hp_config_set=='orig':
@@ -184,20 +186,22 @@ def main(**args):
     #calibration when grid is allowed to charg
     if hp_config_set=='grid_charge':
         hyperparam_config = { 
-            'clip_param': 0.2,
-            'entropy_coeff': 0.0,
-            'gamma': 0.98,
-            'kl_coeff': 1.0,
+            'clip_param': 0.3,
+            'entropy_coeff': 0.0003708415933830854,
+            'gamma': 0.9,
+            'kl_coeff': 0.3,
             'kl_target': 0.1,
-            'lambda': 0.95,
-            'lr': 0.0001,
-            'num_sgd_iter': 20,
+            'lambda': 0.98,
+            'lr': 5.593601930022282e-05,
+            'num_sgd_iter': 10,
             'sgd_minibatch_size': 288,
             'train_batch_size': 2880,
-            'vf_loss_coeff': 0.016068202299156287,
+            'vf_loss_coeff': 0.4999275172390649,
             "rollout_fragment_length": 'auto',
             "batch_mode": "complete_episodes",
             "observation_filter": "MeanStdFilter",}
+
+
 
     #calibration when solar is only allowed to charge
     if hp_config_set=='solar_charge':

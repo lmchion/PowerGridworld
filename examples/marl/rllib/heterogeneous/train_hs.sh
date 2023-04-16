@@ -44,14 +44,14 @@ then
     #cd /home/rakesh/mids/210/PowerGridworld
     #rm -rf $(pwd)/data/outputs/ray_results/PPO/*
     python3 -u $(pwd)/examples/marl/rllib/heterogeneous/train_loop_hs.py \
-        --stop-iters  100 \
+        --stop-iters  2 \
         --stop-reward  0.0 \
         --num-cpus 16 \
         --num-gpus 1 \
-        --local-dir $(pwd)/data/outputs/ray_results \
+        --local-dir $(pwd)/data/outputs \
         --max-episode-steps 288 \
         --input-dir $(pwd)/data/inputs \
-        --training-iteration 100 \
+        --training-iteration 2 \
         --log-level 'INFO' \
         --standalone-train true
         #--scenario-id '010' \
