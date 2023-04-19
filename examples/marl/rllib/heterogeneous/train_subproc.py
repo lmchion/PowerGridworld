@@ -10,17 +10,18 @@ gw_path=Path(__file__).parents[4]
 print(directory)
 
 last_checkpoint=None
+last_checkpoint='/home/ec2-user/PowerGridworld/data/outputs/PPO/PPO_001_74ede_00000_0_framework=torch_2023-04-18_22-00-40/checkpoint_000100'
 
 if last_checkpoint is None:
     proc = subprocess.run(['python','-u','train_hs.py','--stop-iters','100','--stop-reward','0.0',
-                                '--num-cpus','16','--num-gpus','1','--local-dir',str(gw_path)+'/data/outputs/ray_results',
+                                '--num-cpus','16','--num-gpus','1','--local-dir',str(gw_path)+'/data/outputs',
                                 '--max-episode-steps','288','--input-dir', str(gw_path)+'/data/inputs','--training-iteration','100',
                                 '--log-level','INFO','--scenario-id','001'],
                                 cwd=str(directory), capture_output=True)
 else:
-    proc = subprocess.run(['python','-u','train_hs.py','--stop-iters','100','--stop-reward','0.0',
-                                '--num-cpus','16','--num-gpus','1','--local-dir',str(gw_path)+'/data/outputs/ray_results',
-                                '--max-episode-steps','288','--input-dir', str(gw_path)+'/data/inputs','--training-iteration','100',
+    proc = subprocess.run(['python','-u','train_hs.py','--stop-iters','200','--stop-reward','0.0',
+                                '--num-cpus','24','--num-gpus','1','--local-dir',str(gw_path)+'/data/outputs',
+                                '--max-episode-steps','288','--input-dir', str(gw_path)+'/data/inputs','--training-iteration','200',
                                 '--log-level','INFO','--scenario-id','001','--last-checkpoint',last_checkpoint],
                                 cwd=str(directory), capture_output=True)
 
@@ -32,10 +33,11 @@ print(*out_lines, sep='\n')
 print("\n\nERROR ::: ")
 print(*err_lines, sep='\n')
 
-if True:
-    print(proc.stdout)
-    run_dir=(str(proc.stdout, 'UTF-8')).strip()
-    print(run_dir)
-    run_dir=Path(run_dir).parents[0]
-    api.push_data(run_dir, "final_validation")
+#if True:
+
+    # print(proc.stdout)
+    # run_dir=(str(proc.stdout, 'UTF-8')).strip()
+    # print(run_dir)
+    # run_dir=Path(run_dir).parents[0]
+    # api.push_data(run_dir, "final_validation")
     #api.push_data(last_checkpoint, "final_validation")

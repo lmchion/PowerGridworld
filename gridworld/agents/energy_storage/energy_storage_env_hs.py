@@ -60,7 +60,8 @@ class HSEnergyStorageEnv(ComponentEnv):
 
         self.control_interval_in_hr = control_timedelta.seconds / 3600.0
 
-        self._obs_labels =["stage_of_charge", "cost", "es_pv_power_available", "es_pv_power_consumed", "es_grid_power_consumed", "es_grid_power_available"]
+        self._obs_labels =["stage_of_charge", "cost", "es_pv_power_available", "es_pv_power_consumed", 
+                           "es_grid_power_consumed", "es_grid_power_available"]
 
         self._observation_space = gym.spaces.Box(
             shape=(6,),
@@ -190,8 +191,8 @@ class HSEnergyStorageEnv(ComponentEnv):
             # if self.current_storage >= np.mean(self.storage_range):
             #     reward -= 40 * (step_cost)
         #the reward has to be negative so higher reward for less cost
-        reward = - np.exp(step_cost)
-        #reward = - step_cost
+        #reward = - np.exp(step_cost)
+        reward = - step_cost
         #reward = -(1+reward)**3
 
         # solar_capacity = kwargs['pv_power']
@@ -262,7 +263,8 @@ class HSEnergyStorageEnv(ComponentEnv):
 
             battery_power_consumed = -self.validate_power(-battery_capacity)
             
-            solar_power_consumed = -self.validate_power(-battery_power_consumed-solar_capacity)-battery_power_consumed
+            #solar_power_consumed = -self.validate_power(-battery_power_consumed-solar_capacity)-battery_power_consumed
+            solar_power_consumed = solar_capacity
 
             ########################## CODE WORKS ############################################
             #power = - min(self.max_power, battery_power_consumed+solar_power_consumed )
@@ -271,24 +273,28 @@ class HSEnergyStorageEnv(ComponentEnv):
 
             ####################### NEW CODE ############################################
             # set new power to take all leftover battery and solar up to the maximum charge
-            new_power = - min(self.max_power,  solar_power_consumed )
+            #new_power= -min ( 12 , 6) = -6
+            #solar_power_consumed = 6
+            solar_power_consumed =  min(self.max_power,  solar_power_consumed )
             # clip solar if leftover battery and solar is over the max charge 
-            solar_power_consumed = -new_power 
             
-            power=-solar_power_consumed
-            grid_power_consumed=0.0
+            
+            #power=-solar_power_consumed
+            #grid_power_consumed=0.0
 
             # this allows to take more grid if the power greater than the new power but forces to take as much as unused power as possible
-            #power= min(power, new_power)
-            #grid_power_consumed=min( grid_capacity, -power  - solar_power_consumed  )
+            #power = min (-12, -6) = -12 
+            power= min(power, -solar_power_consumed)
+            grid_power_consumed=min( grid_capacity, -power  - solar_power_consumed  )
             
             ######################################################################################
+            #power = -12 - 6 = -18
             power = power - battery_power_consumed
             
             delta_storage = self.charge_efficiency * power * self.control_interval_in_hr
 
             self.power[0]=power
-            action[0] = power / self.max_power
+            action[0] = power / (self.max_power +battery_power_consumed)
            
             # calculate the weighted average cost of charging for the time interval
             self.delta_cost =  (grid_cost*grid_power_consumed  / -power) if power!=0.0 else 0.0
