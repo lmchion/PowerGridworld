@@ -2,7 +2,7 @@
 import os
 import time
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pandas as pd
 
@@ -77,26 +77,27 @@ class HSPVEnv(ComponentEnv):
             self.episode_length = min(max_episode_steps, self.episode_length)
 
         # Create the obs labels and bounds.
-        self._obs_labels = ["real_power"]
+        self._obs_labels = ["pv_available_power", "pv_actionable_power"]
         self._obs_labels += ["min_voltage"] if grid_aware else []
 
         obs_bounds = {
-            "real_power": (-np.max(self.data), 0.),
+            "pv_available_power": (-np.max(self.data), 0.),
+            "pv_actionable_power": (-np.max(self.data), 0.),
             "min_voltage": (0.9, 1.1)
         }
 
         # Create the optionally rescaled gym spaces.
         self._observation_space = gym.spaces.Box(
-            shape=(len(self.obs_labels),),
-            low=np.array([v[0] for k, v in obs_bounds.items() if k in self.obs_labels]),
-            high=np.array([v[1] for k, v in obs_bounds.items() if k in self.obs_labels]),
+            shape=(len(self._obs_labels),),
+            low=np.array([v[0] for k, v in obs_bounds.items() if k in self._obs_labels]),
+            high=np.array([v[1] for k, v in obs_bounds.items() if k in self._obs_labels]),
             dtype=np.float64)
 
         self.observation_space = maybe_rescale_box_space(
             self._observation_space, rescale=self.rescale_spaces)
 
         self._action_space = gym.spaces.Box(
-            shape=(1,), low=0.98, high=1., dtype=np.float64)
+            shape=(1,), low=0.99, high=1., dtype=np.float64)
 
         self.action_space = maybe_rescale_box_space(
             self._action_space, rescale=self.rescale_spaces)
@@ -116,16 +117,16 @@ class HSPVEnv(ComponentEnv):
         else:
             obs = raw_obs
         
-        meta= {"real_power": -raw_obs[0]}
+        meta= {"pv_available_power": -raw_obs[0]}
         
-        meta['pv_power']=meta['real_power']
+        #meta['pv_power']=meta['real_power']
 
         kwargs.update(meta)
       
         
         return obs,kwargs
     
-    def reset(self, **kwargs):
+    def reset(self, *, seed=None, options=None, **kwargs):
         """Resetting consists of simply putting the index back to 0."""
         self.index = 0
         return self.get_obs(**kwargs)
@@ -135,36 +136,45 @@ class HSPVEnv(ComponentEnv):
         return self.index == (self.episode_length)
     
     def step(self, action, **kwargs):
+        raw_action = action
         if self.rescale_spaces:
-            action = to_raw(action, self._action_space.low, self._action_space.high)
+            raw_action = to_raw(raw_action, self._action_space.low, self._action_space.high)
 
         # We apply the control first, then step.  The correct thing to do here
         # could be subtle, but for now we're assuming the agent knows (based on
         # the last obs) what the max power output is, and can react accordingly.
         obs, obs_meta = self.get_obs(**kwargs)
 
-        self._real_power = np.float64((action * obs_meta["real_power"]).squeeze())
+        self._real_power = np.float64((raw_action * obs_meta["pv_available_power"]).squeeze())
         self.index += 1
         rew, rew_meta = self.step_reward(**kwargs)
 
+        # if action < 0.9:
+        #     rew -= (90-100*action.tolist()[0])**2
+        # else:
+        #     rew += (5*action.tolist()[0])**2
+
+        obs_meta["pv_actionable_power"] = self._real_power 
+
         rew_meta['pv_power']=self._real_power 
-        rew_meta['step_meta']['action'] = action.tolist()
-        rew_meta['step_meta']['solar_power_consumed'] = obs_meta["real_power"]
+        rew_meta['step_meta']['action'] = raw_action.tolist()
+        rew_meta['step_meta']['solar_power_consumed'] = 0
         rew_meta['step_meta']['es_power_consumed'] = 0
         rew_meta['step_meta']['grid_power_consumed'] = 0
-        rew_meta['step_meta']['device_custom_info'] = {'pv_available_power': obs_meta["real_power"], 'pv_actionable_power': self._real_power}
+        rew_meta['step_meta']['device_custom_info'] = {'pv_available_power': obs_meta["pv_available_power"], 'pv_actionable_power': obs_meta["pv_actionable_power"]}
 
         obs_meta.update(rew_meta)
-        #print("pv_obs_meta", obs_meta)
-        #time.sleep(60) 
-        return obs, rew, self.is_terminal(), obs_meta
+        return obs, rew, self.is_terminal(), False, obs_meta
 
     def step_reward(self, **kwargs):
         step_meta = {}
         reward = 0
-        
+
         step_meta["device_id"] = self.name
         step_meta["timestamp"] = kwargs['timestamp']
         step_meta["cost"] = 0
         step_meta["reward"] = reward
-        return reward, {"step_meta": step_meta}
+
+        kwargs.update({"step_meta": step_meta})
+
+        return reward, kwargs

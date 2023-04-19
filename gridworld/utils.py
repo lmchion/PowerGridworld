@@ -1,6 +1,6 @@
 import logging
 
-import gym
+import gymnasium as gym
 import numpy as np
 
 from gridworld.log import logger

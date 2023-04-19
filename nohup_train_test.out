@@ -1,0 +1,5 @@
+./examples/marl/rllib/heterogeneous/train_subproc.py: line 1: import: command not found
+./examples/marl/rllib/heterogeneous/train_subproc.py: line 2: import: command not found
+./examples/marl/rllib/heterogeneous/train_subproc.py: line 8: from: command not found
+./examples/marl/rllib/heterogeneous/train_subproc.py: line 10: syntax error near unexpected token `('
+./examples/marl/rllib/heterogeneous/train_subproc.py: line 10: `directory= Path(__file__).parents[0]'

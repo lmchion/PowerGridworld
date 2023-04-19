@@ -1,0 +1,61 @@
+[H[2J[3Jrunning locally true
+iteration set 1
+env_set ['001']
+env 001
+training_iteration 2
+
+
+OUT ::: 
+b'/home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO/PPO_001_fe4fe_00000_0_framework=torch_2023-04-10_18-03-27/checkpoint_000002/'
+
+
+ERROR ::: 
+b"[INFO] train_hs.py:39: ARGS: {'env_name': 'buildings', 'system_load_rescale_factor': 0.6, 'max_episode_steps': 288, 'local_dir': '/home/ec2-user/PowerGridworld/data/outputs/ray_results', 'stop_timesteps': 10000000000, 'stop_iters': 2, 'stop_reward': 0.0, 'run': 'PPO', 'framework': 'torch', 'num_gpus': 1, 'num_cpus': 8, 'num_samples': 1, 'log_level': 'WARN', 'node_ip_address': '127.0.0.1', 'input_dir': '/home/ec2-user/PowerGridworld/data/inputs', 'last_checkpoint': 'None', 'training_iteration': '2', 'scenario_id': '001', 'standalone_train': True}"
+b'[INFO] train_hs.py:64: ENV CONFIG'
+b'\x1b[2m\x1b[36m(PPO pid=20736)\x1b[0m 2023-04-10 18:03:31,460\tWARNING algorithm_config.py:596 -- Cannot create PPOConfig from given `config_dict`! Property __stdout_file__ not supported.'
+b"\x1b[2m\x1b[36m(PPO pid=20736)\x1b[0m 2023-04-10 18:03:31,464\tINFO algorithm.py:506 -- Current log_level is WARN. For more information, set 'log_level': 'INFO' / 'DEBUG' or use the -v and -vv flags."
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21192)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21192)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21190)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21190)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b"\x1b[2m\x1b[36m(RolloutWorker pid=21187)\x1b[0m 2023-04-10 18:03:35,898\tWARNING env.py:166 -- Your env reset() method appears to take 'seed' or 'return_info' arguments. Note that these are not yet supported in RLlib. Seeding will take place using 'env.seed()' and the info dict will not be returned from reset."
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21187)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21187)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21191)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21191)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21188)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21188)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21189)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21189)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21193)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21193)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21194)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=21194)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+Finished 001 process in 38.76903247833252 seconds.
+$$$$$$$$$$$$$$$$$$$$$$ None
+prior_run_dir /home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO/PPO_001_fe4fe_00000_0_framework=torch_2023-04-10_18-03-27
+output_dir /home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO
+[INFO] api.py:38: data push to store; status: 400
+Traceback (most recent call last):
+  File "/opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/requests/models.py", line 971, in json
+    return complexjson.loads(self.text, **kwargs)
+  File "/opt/conda/envs/gridworld_hs/lib/python3.10/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/opt/conda/envs/gridworld_hs/lib/python3.10/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/opt/conda/envs/gridworld_hs/lib/python3.10/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ec2-user/PowerGridworld/examples/marl/rllib/heterogeneous/train_loop_hs.py", line 102, in <module>
+    _ = main(**vars(args))
+  File "/home/ec2-user/PowerGridworld/examples/marl/rllib/heterogeneous/train_loop_hs.py", line 88, in main
+    api.push_data(prior_run_dir, "final_validation")
+  File "/home/ec2-user/PowerGridworld/examples/marl/rllib/heterogeneous/api.py", line 39, in push_data
+    response_content = r.json()
+  File "/opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/requests/models.py", line 975, in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)

@@ -1,6 +1,6 @@
 import os
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pandas as pd
 
@@ -124,7 +124,7 @@ class PVEnv(ComponentEnv):
         return 0., {}
 
 
-    def reset(self, **kwargs):
+    def reset(self,  *, seed=None, options=None, **kwargs):
         """Resetting consists of simply putting the index back to 0."""
         self.index = 0
         self.get_obs(**kwargs)
@@ -145,4 +145,4 @@ class PVEnv(ComponentEnv):
         self.index += 1
         rew, _ = self.step_reward(**kwargs)
 
-        return obs, rew, self.is_terminal(), obs_meta
+        return obs, rew, self.is_terminal(), False, obs_meta

@@ -1,7 +1,7 @@
 
 from collections import OrderedDict
 
-import gym
+import gymnasium as gym
 import numpy as np
 
 
@@ -75,7 +75,7 @@ class MultiAgentListInterfaceEnv(gym.Env):
                                  for k in self.nested_sequence.keys()]
         done = [done[k] for k in self.nested_sequence.keys()]
 
-        return next_obs_list_interface, reward_list_interface, done, info
+        return next_obs_list_interface, reward_list_interface, done, False, info
 
     def convert_to_list_obs(self, obs):
         """ Convert the dictionary based observation to list based observation.

@@ -1,0 +1,90 @@
+[H[2J[3Jrunning locally true
+iteration set 1
+env_set ['001']
+env 001
+training_iteration 100
+
+
+OUT ::: 
+b"Best performing trial's final set of hyperparameters:"
+b''
+b"{'clip_param': 0.2,"
+b" 'entropy_coeff': 0.0,"
+b" 'gamma': 0.98,"
+b" 'kl_coeff': 1.0,"
+b" 'kl_target': 0.1,"
+b" 'lambda': 0.95,"
+b" 'lr': 0.0001,"
+b" 'num_sgd_iter': 20,"
+b" 'sgd_minibatch_size': 288,"
+b" 'train_batch_size': 2880,"
+b" 'vf_loss_coeff': 0.016068202299156287}"
+b'/home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO/PPO_001_532e5_00000_0_framework=torch_2023-04-11_11-38-05/checkpoint_000100/'
+
+
+ERROR ::: 
+b'/home/ec2-user/PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.py:16: DeprecationWarning: The module `ray.tune.suggest` has been moved to `ray.tune.search` and the old location will be deprecated soon. Please adjust your imports to point to the new location. Example: Do a global search and replace `ray.tune.suggest` with `ray.tune.search`.'
+b'  from ray.tune.suggest.hyperopt import HyperOptSearch'
+b'/home/ec2-user/PowerGridworld/examples/marl/rllib/heterogeneous/train_hs.py:16: DeprecationWarning: The module `ray.tune.suggest.hyperopt` has been moved to `ray.tune.search.hyperopt` and the old location will be deprecated soon. Please adjust your imports to point to the new location. Example: Do a global search and replace `ray.tune.suggest.hyperopt` with `ray.tune.search.hyperopt`.'
+b'  from ray.tune.suggest.hyperopt import HyperOptSearch'
+b"[INFO] train_hs.py:52: ARGS: {'env_name': 'buildings', 'system_load_rescale_factor': 0.6, 'max_episode_steps': 288, 'local_dir': '/home/ec2-user/PowerGridworld/data/outputs/ray_results', 'stop_timesteps': 10000000000, 'stop_iters': 100, 'stop_reward': 0.0, 'run': 'PPO', 'framework': 'torch', 'num_gpus': 1, 'num_cpus': 8, 'num_samples': 1, 'log_level': 'WARN', 'node_ip_address': '127.0.0.1', 'input_dir': '/home/ec2-user/PowerGridworld/data/inputs', 'last_checkpoint': 'None', 'training_iteration': '100', 'scenario_id': '001', 'standalone_train': True}"
+b'[INFO] train_hs.py:77: ENV CONFIG'
+b'/opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/ray/tune/tune.py:562: UserWarning: Consider boosting PBT performance by enabling `reuse_actors` as well as implementing `reset_config` for Trainable.'
+b'  warnings.warn('
+b'\x1b[2m\x1b[36m(PPO pid=29043)\x1b[0m 2023-04-11 11:38:09,726\tWARNING algorithm_config.py:596 -- Cannot create PPOConfig from given `config_dict`! Property __stdout_file__ not supported.'
+b"\x1b[2m\x1b[36m(PPO pid=29043)\x1b[0m 2023-04-11 11:38:09,729\tINFO algorithm.py:506 -- Current log_level is WARN. For more information, set 'log_level': 'INFO' / 'DEBUG' or use the -v and -vv flags."
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29491)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29491)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29489)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29489)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29492)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29492)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b"\x1b[2m\x1b[36m(RolloutWorker pid=29486)\x1b[0m 2023-04-11 11:38:14,095\tWARNING env.py:166 -- Your env reset() method appears to take 'seed' or 'return_info' arguments. Note that these are not yet supported in RLlib. Seeding will take place using 'env.seed()' and the info dict will not be returned from reset."
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29486)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29486)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29487)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29487)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29493)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29493)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29488)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29488)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29490)\x1b[0m /opt/conda/envs/gridworld_hs/lib/python3.10/site-packages/gymnasium/utils/passive_env_checker.py:233: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)'
+b'\x1b[2m\x1b[36m(RolloutWorker pid=29490)\x1b[0m   if not isinstance(terminated, (bool, np.bool8)):'
+Finished 001 process in 601.6316387653351 seconds.
+$$$$$$$$$$$$$$$$$$$$$$ None
+prior_run_dir Best performing trial's final set of hyperparameters:
+
+{'clip_param': 0.2,
+ 'entropy_coeff': 0.0,
+ 'gamma': 0.98,
+ 'kl_coeff': 1.0,
+ 'kl_target': 0.1,
+ 'lambda': 0.95,
+ 'lr': 0.0001,
+ 'num_sgd_iter': 20,
+ 'sgd_minibatch_size': 288,
+ 'train_batch_size': 2880,
+ 'vf_loss_coeff': 0.016068202299156287}
+/home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO/PPO_001_532e5_00000_0_framework=torch_2023-04-11_11-38-05
+output_dir Best performing trial's final set of hyperparameters:
+
+{'clip_param': 0.2,
+ 'entropy_coeff': 0.0,
+ 'gamma': 0.98,
+ 'kl_coeff': 1.0,
+ 'kl_target': 0.1,
+ 'lambda': 0.95,
+ 'lr': 0.0001,
+ 'num_sgd_iter': 20,
+ 'sgd_minibatch_size': 288,
+ 'train_batch_size': 2880,
+ 'vf_loss_coeff': 0.016068202299156287}
+/home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO
+Traceback (most recent call last):
+  File "/home/ec2-user/PowerGridworld/examples/marl/rllib/heterogeneous/train_loop_hs.py", line 102, in <module>
+    _ = main(**vars(args))
+  File "/home/ec2-user/PowerGridworld/examples/marl/rllib/heterogeneous/train_loop_hs.py", line 88, in main
+    api.push_data(prior_run_dir, "final_validation")
+  File "/home/ec2-user/PowerGridworld/examples/marl/rllib/heterogeneous/api.py", line 14, in push_data
+    with open(csv_file_name, encoding='utf-8') as csvf:
+OSError: [Errno 36] File name too long: "Best performing trial's final set of hyperparameters:\n\n{'clip_param': 0.2,\n 'entropy_coeff': 0.0,\n 'gamma': 0.98,\n 'kl_coeff': 1.0,\n 'kl_target': 0.1,\n 'lambda': 0.95,\n 'lr': 0.0001,\n 'num_sgd_iter': 20,\n 'sgd_minibatch_size': 288,\n 'train_batch_size': 2880,\n 'vf_loss_coeff': 0.016068202299156287}\n/home/ec2-user/PowerGridworld/data/outputs/ray_results/PPO/PPO_001_532e5_00000_0_framework=torch_2023-04-11_11-38-05/final_validation.csv"

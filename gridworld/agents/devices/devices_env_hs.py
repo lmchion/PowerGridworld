@@ -1,6 +1,6 @@
 import os
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pandas as pd
 
@@ -25,6 +25,9 @@ class HSDevicesEnv(ComponentEnv):
         rescale_spaces: bool = True,
         max_episode_steps: int = None,
         minutes_per_step : int = 5,
+        max_grid_power: float = None,
+        max_pv_power: float = None,
+        max_es_power: float = None,
         **kwargs
     ):
 
@@ -75,17 +78,21 @@ class HSDevicesEnv(ComponentEnv):
 
         # Create the obs labels and bounds.
         self._obs_labels = list(self.data_pd.columns)
+        self._oth_power_labels = list(self.data_pd.columns)
 
         obs_bounds={}
         for num,elem in enumerate(self._obs_labels ):
-            obs_bounds[elem]=(0.0,max(list(self.data_pd[elem])))
-        
+            obs_bounds[elem]=(0.0, max(list(self.data_pd[elem])))
+
+        self._obs_labels.extend(["oth_grid_power_consumed"])
+
+        obs_bounds["oth_grid_power_consumed"] = (0.0, max(list(self.data_pd[elem])))
 
         # Create the optionally rescaled gym spaces.
         self._observation_space = gym.spaces.Box(
-            shape=(len(self.obs_labels),),
-            low=np.array([v[0] for k, v in obs_bounds.items() if k in self.obs_labels]),
-            high=np.array([v[1] for k, v in obs_bounds.items() if k in self.obs_labels]),
+            shape=(len(self._obs_labels),),
+            low=np.array([v[0] for k, v in obs_bounds.items() if k in self._obs_labels]),
+            high=np.array([v[1] for k, v in obs_bounds.items() if k in self._obs_labels]),
             dtype=np.float64)
 
         self.observation_space = maybe_rescale_box_space(
@@ -101,18 +108,30 @@ class HSDevicesEnv(ComponentEnv):
     def get_obs(self, **kwargs):
         """Returns the maximum real power possible for the current row of csv 
         data."""
-        raw_obs = self.data[self.index]
-        #print(raw_obs, self.index)
+        raw_obs = np.array(self.data[self.index])
+
+        # Update Observation space with availability and consumption information.
+        # attach values to observation here
+        raw_obs = np.append(raw_obs, 
+                        [kwargs['grid_power_consumed']])
         
-        raw_obs = np.array(raw_obs)
         if self.rescale_spaces:
             obs = to_scaled(raw_obs, self._observation_space.low, self._observation_space.high)
         else:
             obs = raw_obs
         
         meta=kwargs.copy()
-        for elem in self._obs_labels:
+        for elem in self._oth_power_labels:
             meta[elem]=self.data_pd.loc[self.index, elem]
+
+        # attach values in observation meta as well
+        meta["oth_pv_power_available"] = kwargs['pv_power']
+        meta["oth_pv_power_consumed"] = kwargs['solar_power_consumed']
+        meta["oth_es_power_available"] = kwargs['es_power']
+        meta["oth_es_power_consumed"] = kwargs['es_power_consumed']
+        meta["oth_grid_power_available"] = kwargs['grid_power']
+        meta["oth_grid_power_consumed"] = kwargs['grid_power_consumed']
+        
 
         return obs, meta
 
@@ -127,20 +146,33 @@ class HSDevicesEnv(ComponentEnv):
         step_cost = self.current_cost * self._real_power * (self.minutes_per_step/60.0)
 
         step_meta = {}
+        reward = - np.exp(step_cost)
+        #reward = - step_cost
+        #reward = -(1+reward)**3
 
-        reward = -step_cost
+        # # This is the final sub-environment which gets to act in the system. On each step,
+        # # if there is any solar or battery juice left which does not get used, penalize this.
+        # if kwargs['oth_pv_power_available'] > 0.0:
+        #     reward -= kwargs['oth_pv_power_available'] * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
+
+        # if kwargs['oth_es_power_available'] > 0.0:
+        #     reward -= kwargs['oth_es_power_available'] * kwargs['max_grid_cost'] * (self.minutes_per_step/60.0)
         
         step_meta["device_id"] = self.name
         step_meta["timestamp"] = kwargs['timestamp']
         step_meta["cost"] = step_cost
         step_meta["reward"] = reward
-        return reward, {"step_meta": step_meta}
+
+        kwargs.update({"step_meta": step_meta})
+
+        return reward, kwargs
 
 
 
-    def reset(self, **kwargs):
+    def reset(self, *, seed=None, options=None, **kwargs):
         """Resetting consists of simply putting the index back to 0."""
         self.index = 0
+
         return self.get_obs(**kwargs)
 
 
@@ -160,7 +192,7 @@ class HSDevicesEnv(ComponentEnv):
 
         obs_meta = kwargs.copy()
 
-        sum_obs_meta=sum([kwargs[x] for x in self._obs_labels ])
+        sum_obs_meta=sum([kwargs[x] for x in self._oth_power_labels ])
         self._real_power = np.float64((action * sum_obs_meta).squeeze())
 
         solar_power_consumed = 0
@@ -191,15 +223,26 @@ class HSDevicesEnv(ComponentEnv):
             kwargs['es_power']=max(0.0, battery_capacity-battery_power_consumed)
             kwargs['grid_power']=max(0.0, grid_capacity-grid_power_consumed)
 
+            kwargs['es_power_consumed']=battery_power_consumed
+            kwargs['solar_power_consumed']=solar_power_consumed
+            kwargs['grid_power_consumed']=grid_power_consumed
+
+        # obs, obs_meta = self.get_obs(**kwargs)
+
+        # obs_meta = kwargs.copy()
+
         rew, rewmeta = self.step_reward(**kwargs)
+
         rewmeta['step_meta']['action'] = action.tolist()
         rewmeta['step_meta']['solar_power_consumed'] = solar_power_consumed
         rewmeta['step_meta']['es_power_consumed'] = battery_power_consumed
         rewmeta['step_meta']['grid_power_consumed'] = grid_power_consumed
-        rewmeta['step_meta']['device_custom_info'] = {'power_ask': self._real_power, 'solar_power_available': solar_capacity-solar_power_consumed, 'es_power_available':battery_capacity-battery_power_consumed, 'grid_power_available':grid_capacity-grid_power_consumed}
-
+        rewmeta['step_meta']['device_custom_info'] = {'power_ask': self._real_power, 
+                                                      'solar_power_available': kwargs['pv_power'], 
+                                                      'es_power_available':kwargs['es_power'], 
+                                                      'grid_power_available':kwargs['grid_power']}
 
         obs_meta.update(rewmeta)
         self.index += 1
 
-        return obs, rew, self.is_terminal(), obs_meta
+        return obs, rew, self.is_terminal(), False, obs_meta

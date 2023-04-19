@@ -8,7 +8,7 @@ from typing import Tuple, Union
 import pandas as pd
 import numpy as np
 
-import gym
+import gymnasium as gym
 
 from gridworld.log import logger
 from gridworld import ComponentEnv
@@ -144,7 +144,7 @@ class FiveZoneROMEnv(ComponentEnv):
         self.q_int = get_col(self.df, "Q_int")[self.time_index]
 
 
-    def reset(self, **obs_kwargs) -> np.ndarray:
+    def reset(self, *, seed=None, options=None, **obs_kwargs) -> np.ndarray:
         """Resets the environment to the initial state and returns this state."""
 
         self.time_index = 0
@@ -177,7 +177,7 @@ class FiveZoneROMEnv(ComponentEnv):
 
         obs, _ = self.get_obs(**obs_kwargs)
 
-        return obs
+        return obs, {}
 
 
     def step(self, action: np.ndarray, **obs_kwargs) -> Tuple[np.ndarray, float, bool, dict]:

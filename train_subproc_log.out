@@ -1,0 +1,10 @@
+/home/ec2-user/PowerGridworld/examples/marl/rllib/heterogeneous
+The exit code was: 1
+b''
+
+Traceback (most recent call last):
+  File "/home/ec2-user/PowerGridworld/./examples/marl/rllib/heterogeneous/train_subproc.py", line 25, in <module>
+    run_dir=Path(run_dir).parents[0]
+  File "/opt/conda/envs/gridworld_hs/lib/python3.10/pathlib.py", line 530, in __getitem__
+    raise IndexError(idx)
+IndexError: 0

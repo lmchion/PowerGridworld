@@ -1,0 +1,5 @@
+[H[2J[3Jrunning locally true
+iteration set 1
+env_set ['001']
+env 001
+training_iteration 100

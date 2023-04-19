@@ -3,11 +3,14 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Dict, List, Tuple
 
-import gym
+import gymnasium as gym
 import numpy as np
+import random
 
 from gridworld.log import logger
+from gymnasium.envs.registration import EnvSpec
 
+from gymnasium.utils import seeding
 
 class ComponentEnv(gym.Env, ABC):
     """Base class for any environment used in the multiagent simulation."""
@@ -25,8 +28,9 @@ class ComponentEnv(gym.Env, ABC):
         self._obs_labels = []
 
 
+
     @abstractmethod
-    def reset(self, **kwargs) -> Tuple[np.ndarray, dict]:
+    def reset(self, *, seed=None, options=None, **kwargs) -> Tuple[np.ndarray, dict]:
         """Standard gym reset method but with kwargs."""
         return
 
@@ -71,6 +75,8 @@ class ComponentEnv(gym.Env, ABC):
         return self._obs_labels
 
 
+
+
 class MultiComponentEnv(ComponentEnv):
     """Class for creating a single Gym environment from multiple component 
     environments.  The action and observation spaces of the multi-component env
@@ -81,9 +87,11 @@ class MultiComponentEnv(ComponentEnv):
             self, 
             name: str = None,
             components: List[dict] = None,
+            max_episode_steps: int = None,
             **kwargs
         ):
-
+       
+    
         super().__init__(name=name, **kwargs)
         
         self.envs = []
@@ -105,7 +113,7 @@ class MultiComponentEnv(ComponentEnv):
         self._obs_labels = list(set(obs_labels))
 
 
-    def reset(self, **kwargs) -> dict:
+    def reset(self, *, seed=None, options=None, **kwargs) -> dict:
         """Default reset method resets each component and returns the obs dict."""
         _ = [e.reset(**kwargs) for e in self.envs]
         return self.get_obs(**kwargs)
@@ -136,7 +144,7 @@ class MultiComponentEnv(ComponentEnv):
         # Compute the step reward using user-implemented method.
         step_reward, _ = self.step_reward()
         
-        return obs, step_reward, any(dones), metas
+        return obs, step_reward, any(dones), False, metas
 
 
     def step_reward(self) -> Tuple[float, dict]:
@@ -180,3 +188,9 @@ class MultiComponentEnv(ComponentEnv):
     @property
     def env_dict(self) -> Dict[str, ComponentEnv]:
         return {e.name: e for e in self.envs}
+    
+    @property
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]
+

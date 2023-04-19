@@ -2,250 +2,78 @@
 cluster see, e.g., https://docs.ray.io/en/latest/cluster/deploy.html."""
 import csv
 import json
-import os
-import os.path as osp
+import pprint
+import random
+import sys
+import time
+from collections import OrderedDict
 
+import gymnasium as gym
 import numpy as np
-import pandas as pd
 import ray
-import requests
+from callbacks import HSAgentTrainingCallback, HSDataLoggerCallback
+from hyperopt import hp
 from ray import tune
-from ray.rllib.agents.callbacks import DefaultCallbacks
-from ray.tune.logger import LoggerCallback
+from ray.air.checkpoint import Checkpoint
+from ray.cluster_utils import Cluster
 from ray.tune.registry import register_env
+from ray.tune.schedulers import PopulationBasedTraining
+from ray.tune.suggest.hyperopt import HyperOptSearch
 
 from gridworld.log import logger
 from gridworld.scenarios.heterogeneous_hs import make_env_config
 
 
-class HSAgentTrainingCallback(DefaultCallbacks):
-    def __init__(self):
-        super().__init__()
-        self._total_episode_cost = 0.0
-
-    def on_episode_start(
-        self, *, worker, base_env, policies, episode, env_index, **kwargs
-    ):
-        #episode.user_data["episode_data"] = defaultdict(list)
-        episode.media["episode_data"] = []
-        self._total_episode_cost = 0.0
-        self._total_datapoints = 0
-        
-
-    def on_episode_step(self, *, worker, base_env, episode, env_index, **kwargs):
-        ep_lastinfo = episode.last_info_for()
-        step_meta = ep_lastinfo.get('step_meta', None)
-        grid_cost = ep_lastinfo.get('grid_cost', None)
-        es_cost = ep_lastinfo.get('es_cost', None)
-        hvac_power = ep_lastinfo.get('hvac_power', None)
-        other_power = ep_lastinfo.get('other_power', None)
-        total_cost = 0
-
-        for step_meta_item in step_meta:
-            episode.media["episode_data"].append([step_meta_item["device_id"], 
-                                                  step_meta_item["timestamp"], 
-                                                  step_meta_item["cost"], 
-                                                  step_meta_item["reward"],
-                                                  step_meta_item["action"], 
-                                                  step_meta_item["solar_power_consumed"], 
-                                                  step_meta_item["es_power_consumed"], 
-                                                  step_meta_item["grid_power_consumed"],
-                                                  grid_cost,
-                                                  es_cost,
-                                                  hvac_power,
-                                                  other_power,
-                                                  step_meta_item["device_custom_info"]])
-            self._total_episode_cost += step_meta_item["cost"]
-            self._total_datapoints += 1
-
-    def on_episode_end(self, *, worker, base_env, policies, episode, env_index, **kwargs) -> None:
-        episode.custom_metrics["total_cost"] = self._total_episode_cost
-
-
-class HSDataLoggerCallback(LoggerCallback):
-    def __init__(self, scenario_id, is_push_data_inline):
-        super().__init__()
-
-        self._trial_continue = {}
-        self._trial_local_dir = {}
-        self._scenario_id = scenario_id
-        self._is_push_data_inline = is_push_data_inline
-
-    def log_trial_start(self, trial):
-        trial.init_logdir()
-        # self._trial_local_dir[trial] = osp.join(trial.logdir, "episode_data")
-        # os.makedirs(self._trial_local_dir[trial], exist_ok=True)
-
-    def log_trial_result(self, iteration, trial, result):
-
-        episode_media = result["episode_media"]
-        if "episode_data" not in episode_media:
-            return
-
-        junk1 = osp.join(trial.logdir, "progress.csv")
-        junk2 = osp.join(trial.logdir, "result.json")
-        if os.path.exists(junk1):
-            os.remove(junk1)
-        if os.path.exists(junk2):
-            os.remove(junk2)
- 
-
-    def _push_data(self, logdir, csvname):
-        csv_file_name = osp.join(logdir, csvname+".csv")
-        json_file_name = osp.join(logdir, csvname+".json")
-
-        with open(csv_file_name, encoding='utf-8') as csvf:
-            csvReader = csv.DictReader(csvf)
-                
-            # Convert each row into a dictionary
-            # and add it to file
-
-            file = [{k:v for k,v in rows.items() if k!=''} for rows in csvReader]
-            
-            output = {'result':file}
-            
-            with open(json_file_name, 'w', encoding='utf-8') as jsonf:
-                jsonf.write(json.dumps(output, indent=4))
-            
-            import requests
-
-            # defining the api-endpoint 
-            API_ENDPOINT = "http://44.214.125.207:443/result"
-            headers = {"Content-Type": "application/json; charset=utf-8"}
-            
-            # sending post request and saving response as response object
-            r= requests.post(url=API_ENDPOINT, headers=headers, json=output)
-            
-            # extracting response text
-            response_status = r.status_code 
-            response_content = r.json()
-            logger.info("data push to store; status: "+str(response_status))
-            logger.info("data push to store; response: "+str(response_content))
-
-    def on_experiment_end(self, trials, **info):
-        print("on_experiment_end dumping the last result for validation..")
-        result = trials[0].last_result
-        logdir = trials[0].logdir
-        episode_media = result["episode_media"]
-        if "episode_data" not in episode_media:
-            return
-
-        data = episode_media["episode_data"]            
-
-        episode_data = data[-1]
-
-        extract_columns = ["device", 
-                            "timestamp", 
-                            "cost", 
-                            "reward",
-                            "action", 
-                            "solar_power_consumed", 
-                            "es_power_consumed", 
-                            "grid_power_consumed",
-                            "grid_cost",
-                            "es_cost",
-                            "hvac_power",
-                            "other_power",
-                            "device_custom_info"]
-
-        if not episode_data:
-            logger.info("Episode data tranche is empty while logging. skipping.")
-        
-        df = pd.DataFrame(episode_data, columns=extract_columns)
-
-        timestamps = df['timestamp'].unique()
-        final_csv_rows = []
-        for t_stp in timestamps:
-            timestamp_data = {}
-            timestamp_data['timestamp'] = t_stp
-
-            tmp_timestamp_data = df[df["timestamp"]==t_stp].drop("timestamp", axis=1)
-            
-            timestamp_data["timestamp"] = t_stp
-            
-            for i in tmp_timestamp_data.itertuples():
-                if i.device == 'storage':
-                    timestamp_data["scenario_id"] = self._scenario_id
-                    timestamp_data["grid_price"] = i.grid_cost
-                    timestamp_data["es_cost"] = i.cost
-                    timestamp_data["es_reward"] = i.reward
-                    timestamp_data["es_action"] = i.action[-1]
-                    timestamp_data["es_power_ask"] = i.device_custom_info["power_ask"]
-                    timestamp_data["es_current_storage"] = i.device_custom_info["current_storage"]
-                    timestamp_data["es_solar_power_consumed"] = i.solar_power_consumed
-                    timestamp_data["es_grid_power_consumed"] = i.grid_power_consumed
-                    timestamp_data["es_post_solar_power_available"] = i.device_custom_info["solar_power_available"]
-                    timestamp_data["es_post_grid_power_available"] = i.device_custom_info["grid_power_available"]
-                    timestamp_data["es_post_es_power_available"] = i.device_custom_info["es_power_available"]
-                elif i.device == 'ev-charging':
-                    timestamp_data["ev_cost"] = i.cost
-                    timestamp_data["ev_reward"] = i.reward
-                    timestamp_data["ev_action"] = i.action[-1]
-                    timestamp_data["ev_power_ask"] = i.device_custom_info["power_ask"]
-                    timestamp_data["ev_power_unserved"] = i.device_custom_info["power_unserved"]
-                    timestamp_data["ev_charging_vehicle"] = i.device_custom_info["charging_vehicle"]
-                    timestamp_data["ev_vehicle_charged"] = i.device_custom_info["vehicle_charged"]
-                    timestamp_data["ev_post_solar_power_available"] = i.device_custom_info["solar_power_available"]
-                    timestamp_data["ev_post_es_power_available"] = i.device_custom_info["es_power_available"]
-                    timestamp_data["ev_post_grid_power_available"] = i.device_custom_info["grid_power_available"]
-                    timestamp_data["ev_solar_power_consumed"] = i.solar_power_consumed
-                    timestamp_data["ev_es_power_consumed"] = i.es_power_consumed
-                    timestamp_data["ev_grid_power_consumed"] = i.grid_power_consumed
-                elif i.device == 'other-devices':
-                    timestamp_data["oth_dev_cost"] = i.cost
-                    timestamp_data["oth_dev_reward"] = i.reward
-                    timestamp_data["oth_dev_action"] = i.action[-1]
-                    timestamp_data["oth_dev_solar_power_consumed"] = i.solar_power_consumed
-                    timestamp_data["oth_dev_es_power_consumed"] = i.es_power_consumed
-                    timestamp_data["oth_dev_grid_power_consumed"] = i.grid_power_consumed
-                    timestamp_data["oth_dev_power_ask"] = i.device_custom_info["power_ask"]
-                    timestamp_data["oth_dev_post_solar_power_available"] = i.device_custom_info["solar_power_available"]
-                    timestamp_data["oth_dev_post_es_power_available"] = i.device_custom_info["es_power_available"]
-                    timestamp_data["oth_dev_post_grid_power_available"] = i.device_custom_info["grid_power_available"]
-                elif i.device == 'pv':
-                    timestamp_data["pv_reward"] = i.reward
-                    timestamp_data["solar_action"] = i.action[-1]
-                    timestamp_data["solar_available_power"] = i.device_custom_info["pv_available_power"]
-                    timestamp_data["solar_actionable_power"] = i.device_custom_info["pv_actionable_power"]
-
-
-            final_csv_rows.append(timestamp_data)
-        
-        csvname = "final_validation"
-        dump_file_name = osp.join(logdir, csvname+".csv")
-
-        final_df = pd.DataFrame(final_csv_rows)
-        final_df.to_csv(dump_file_name, sep=',', encoding='utf-8')
-
-        if self._is_push_data_inline:
-            self._push_data(logdir, csvname)
-
-
 def env_creator(config: dict):
     """Simple wrapper that takes a config dict and returns an env instance."""
     
-    from gridworld import HSMultiComponentEnv
+    
+    gym.register(id=config['name']+'-v0',
+                          entry_point='gridworld.base_hs:HSMultiComponentEnv',
+                          max_episode_steps=config['max_episode_steps']
+                         )
+    env = gym.make( id='gridworld.base_hs:'+config['name']+'-v0',**config )
+    #env.action_space.seed(123)
 
-    return HSMultiComponentEnv(**config)
+    return env
 
+# Postprocess the perturbed config to ensure it's still valid
+def explore(config):
+        # ensure we collect enough timesteps to do sgd
+        if config["train_batch_size"] < config["sgd_minibatch_size"] * 2:
+            config["train_batch_size"] = config["sgd_minibatch_size"] * 2
+        # ensure we run at least one sgd iter
+        if config["num_sgd_iter"] < 1:
+            config["num_sgd_iter"] = 1
+        return config
 
 def main(**args):
 
     # Log the args used for training.
     logger.info(f"ARGS: {args}")
-
+    
     # Run ray on a single node.  If running on VPN, you might need some bash 
     # magic, see e.g. train.sh.
-    ray.init(_node_ip_address=args["node_ip_address"], log_to_driver=True, logging_level="error")
-   
+    ray.init(_node_ip_address=args["node_ip_address"],  log_to_driver=True, logging_level="error")
+    #num_cpus=args['num_cpus'], num_gpus=args['num_gpus'],
+
+    if args['last_checkpoint']!='None':
+        #checkpoint=Checkpoint(local_path= args['last_checkpoint'])
+        checkpoint=args['last_checkpoint']
+    else:
+        checkpoint=None
+            
     # Register the environment.
-    env_name = args["env_name"]
+    env_name = args["scenario_id"]
     register_env(env_name, env_creator)
 
     # Create the env configuration with option to change max episode steps
     # for debugging.
-    env_config = make_env_config()
-    env_config.update({"max_episode_steps": args["max_episode_steps"]})
+    with open(args["input_dir"]+'/'+ str(env_name) +'.json', 'r') as f:
+        env_config = json.load(f)
+
+    env_config = make_env_config(env_config)
+    #env_config.update({"max_episode_steps": args["max_episode_steps"]})
 
     logger.info("ENV CONFIG", env_config)
 
@@ -259,12 +87,16 @@ def main(**args):
     # Collect params related to train batch size and resources.
     rollout_fragment_length = env.max_episode_steps
     num_workers = args["num_cpus"]
+    scenario_id = args["scenario_id"]
+
 
     # Set any stopping conditions.
     stop = {
-        'training_iteration': args["stop_iters"],
-        'timesteps_total': args["stop_timesteps"],
-        'episode_reward_mean': args["stop_reward"]
+        #'training_iteration': args["stop_iters"],
+        'training_iteration': int(args["training_iteration"]),
+       # 'timesteps_total': int(args["training_iteration"]),
+        # 'max_episode_steps' : int(args["stop_timesteps"]),
+        'episode_reward_mean': float(args["stop_reward"])
     }
 
     # Configure the deep learning framework.
@@ -289,32 +121,145 @@ def main(**args):
     # Configure hyperparameters of the RL algorithm.  train_batch_size is fixed
     # so that results are reproducible, but 34 CPU workers were used in training 
     # -- expect slower performence if using fewer.
-    hyperparam_config = {
-        "lr": 1e-3,
-        "num_sgd_iter": 10,
-        "entropy_coeff": 0.0,
-        "train_batch_size": rollout_fragment_length,   # ensure reproducible
-        "rollout_fragment_length": rollout_fragment_length,
-        "batch_mode": "complete_episodes",
-        "observation_filter": "MeanStdFilter",
-    }
+    hyper_tunning = False
+    if hyper_tunning:
+        hyperparam_config = {
+            'lambda': tune.choice([0.9, 0.95, 0.98, 0.99, 0.995,0.999]),
+            'gamma'  : tune.choice([0.9, 0.95, 0.98, 0.99, 0.995,0.999]),
+            'kl_coeff' : tune.choice([0.3, 0.5, 0.7, 1.0]),
+            'lr':tune.loguniform(5e-5,1e-4, 1e-3),
+            "num_sgd_iter": tune.choice([10,20,30]),
+            'entropy_coeff': tune.loguniform(0.00000001, 0.1),
+            'clip_param':tune.choice([0.1,0.2,0.3,0.4]),
+            'sgd_minibatch_size': tune.choice([64,128,288]),
+            "train_batch_size": tune.choice([rollout_fragment_length*10,rollout_fragment_length*20,rollout_fragment_length*30]),
+            "batch_mode": "complete_episodes",
+            "observation_filter": "MeanStdFilter",
+            "vf_loss_coeff": tune.uniform(0,1),
+            'kl_target': tune.choice([0.001,0.01,0.1]),
+        }
+        hyperparam_mutations = {
+            'lambda': tune.choice([0.9, 0.95, 0.98, 0.99, 0.995,0.999]),
+            'gamma'  : tune.choice([0.9, 0.95, 0.98, 0.99, 0.995,0.999]),
+            'kl_coeff' : tune.choice([0.3, 0.5, 0.7, 1.0]),
+            'lr':tune.loguniform(5e-5,1e-4, 1e-3),
+            "num_sgd_iter": tune.choice([10,20,30]),
+            'entropy_coeff': tune.loguniform(0.00000001, 0.1),
+            'clip_param':tune.choice([0.1,0.2,0.3,0.4]),
+            'sgd_minibatch_size': tune.choice([64,128,288]),
+            "train_batch_size": tune.choice([rollout_fragment_length*10,rollout_fragment_length*20,rollout_fragment_length*30]),
+            "vf_loss_coeff": tune.uniform(0,1),
+            'kl_target': tune.choice([0.001,0.01,0.1]),
+        }
+
+        pbt = PopulationBasedTraining(
+            time_attr="time_total_s",
+            mode="max",
+            perturbation_interval=2,
+            resample_probability=0.25,
+            # Specifies the mutations of these hyperparams
+            hyperparam_mutations=hyperparam_mutations,
+            require_attrs=False
+         )
+
+    #hp_config_set='orig'
+    #hp_config_set='grid_charge'
+    #hp_config_set='solar_charge'
+    hp_config_set = 'obs_experiment'
+
+    #original calibration
+    if hp_config_set=='orig':
+        hyperparam_config = {  
+            'lambda' : 0.95,
+            'gamma' : 0.98,
+            'kl_coeff' : 1.0,
+            "lr": 1e-4,
+            "num_sgd_iter": 20,
+            "entropy_coeff": 0.0,
+            "clip_param" : 0.2,
+            "train_batch_size": rollout_fragment_length*10,   # ensure reproducible
+            #"rollout_fragment_length": rollout_fragment_length*num_workers,
+            "sgd_minibatch_size" : rollout_fragment_length,
+            "rollout_fragment_length": 'auto',
+            "batch_mode": "complete_episodes",
+            "observation_filter": "MeanStdFilter",
+        }
+        
+    #calibration when grid is allowed to charg
+    if hp_config_set=='grid_charge':
+        hyperparam_config = { 
+            'clip_param': 0.2,
+            'entropy_coeff': 0.0,
+            'gamma': 0.98,
+            'kl_coeff': 1.0,
+            'kl_target': 0.1,
+            'lambda': 0.95,
+            'lr': 0.0001,
+            'num_sgd_iter': 20,
+            'sgd_minibatch_size': 288,
+            'train_batch_size': 2880,
+            'vf_loss_coeff': 0.016068202299156287,
+            "rollout_fragment_length": 'auto',
+            "batch_mode": "complete_episodes",
+            "observation_filter": "MeanStdFilter",}
+
+    #calibration when solar is only allowed to charge
+    if hp_config_set=='solar_charge':
+        hyperparam_config = {'clip_param': 0.1,
+                        'entropy_coeff': 9.673768090725892e-08,
+                        'gamma': 0.95,
+                        'kl_coeff': 0.7,
+                        'kl_target': 0.001,
+                        'lambda': 0.98,
+                        'lr': 8.024360846358188e-05,
+                        'num_sgd_iter': 20,
+                        'sgd_minibatch_size': 288,
+                        'train_batch_size': 2880,
+                        'vf_loss_coeff': 0.9751018534591678,
+                        "rollout_fragment_length": 'auto',
+                        "batch_mode": "complete_episodes",
+                        "observation_filter": "MeanStdFilter",}
+
+    if hp_config_set == 'obs_experiment':
+        hyperparam_config = {'clip_param': 0.2,
+                            'entropy_coeff': 0.0,
+                            'gamma': 0.98,
+                            'kl_coeff': 1.0,
+                            'kl_target': 0.001,
+                            'lambda': 0.95,
+                            'lr': 0.0001,
+                            'num_sgd_iter': 20,
+                            'sgd_minibatch_size': 288,
+                            'train_batch_size': 2880,
+                            'vf_loss_coeff': 0.056917598359363275,
+                            "rollout_fragment_length": 'auto',
+                            "batch_mode": "complete_episodes",
+                            "observation_filter": "MeanStdFilter"}
+     
+
 
     # Run the trial.
     experiment = tune.run(
         args["run"],
         local_dir=args["local_dir"],
-        checkpoint_freq=100,
+        checkpoint_freq=1000,
         checkpoint_at_end=True,
         checkpoint_score_attr="episode_reward_mean",
         keep_checkpoints_num=100,
         stop=stop,
-        callbacks=[HSDataLoggerCallback(scenario_id, is_push_data_inline)],
+        callbacks=[HSDataLoggerCallback(scenario_id)] if not hyper_tunning else None ,
+        restore=checkpoint,
+        scheduler=pbt if hyper_tunning else None,
+        #search_alg=algo,
+        #resume="AUTO",
+       # gamma=1.0,
         config={
             "env": env_name,
             "env_config": env_config,
             "num_gpus": args["num_gpus"],
             "num_workers": num_workers,
-            "callbacks": HSAgentTrainingCallback,
+            "horizon" : rollout_fragment_length,
+            "callbacks": HSAgentTrainingCallback if not hyper_tunning else None ,
             # "multiagent": {
             #     "policies": {
             #         agent_id: (None, obs_space[agent_id], act_space[agent_id], {}) 
@@ -323,6 +268,7 @@ def main(**args):
             #     "policy_mapping_fn": (lambda agent_id: agent_id)
             # },
             "log_level": args["log_level"].upper(),
+            
             **framework_config,
             **hyperparam_config,
             **evaluation_config
@@ -330,13 +276,30 @@ def main(**args):
         verbose=0
     )
 
-    return experiment
+
+
+    if hyper_tunning:
+        best_result = experiment.get_best_trial().last_result
+        
+        print("Best performing trial's final set of hyperparameters:\n")
+        pprint.pprint(
+        {k: v for k, v in best_result['config'].items() if k in hyperparam_mutations}
+        )
+
+    trial = experiment.get_best_logdir(metric="training_iteration", mode="max")
+
+    last_checkpoint = experiment.get_best_checkpoint(trial, "training_iteration", "max",True)
+
+    return(last_checkpoint)
+
+    
 
 
 if __name__ == "__main__":
 
-    from args import parser
+    from args_hs import parser
 
     args = parser.parse_args()
 
-    _ = main(**vars(args))
+    last_check = main(**vars(args))
+    print(last_check, file=sys.stdout)

@@ -3,7 +3,7 @@ import os
 from collections import OrderedDict
 from typing import Tuple
 
-import gym
+import gymnasium as gym
 import numpy as np
 import pandas as pd
 
@@ -30,6 +30,9 @@ class HSEVChargingEnv(ComponentEnv):
         vehicle_multiplier: int = 1,
         rescale_spaces: bool = True,
         max_charge_cost: float = 0.55,
+        max_grid_power: float = None,
+        max_pv_power: float = None,
+        max_es_power: float = None,
         profile_data : dict = {},
         **kwargs
     ):
@@ -80,19 +83,33 @@ class HSEVChargingEnv(ComponentEnv):
 
         # Bounds on the observation space variables.
         obs_bounds = OrderedDict({
-            "time": (0, self.simulation_times[-1]),
-            "num_active_vehicles": (
-                0, self.num_vehicles),
-            "real_power_consumed": (
-                0, self.num_vehicles * self.max_charge_rate_kw),
-            "real_power_demand": (
-                0, self.num_vehicles * self._df["energy_required_kwh"].max()),
-            "mean_charge_rate_deficit": (
-                0, self._df["energy_required_kwh"].max() / (self.minutes_per_step / 60.)),
+            # "time": (0, self.simulation_times[-1]),
+            # "num_active_vehicles": (
+            #     0, self.num_vehicles),
+            # "real_power_consumed": (
+            #     0, self.num_vehicles * self.max_charge_rate_kw),
+            # "real_power_demand": (
+            #     0, self.num_vehicles * self._df["energy_required_kwh"].max()),
+            # "mean_charge_rate_deficit": (
+            #     0, self._df["energy_required_kwh"].max() / (self.minutes_per_step / 60.)),
+            
+            
+            # "ev_pv_power_available" : (
+            #     0, max_pv_power), 
+            # "ev_pv_power_consumed" : (
+            #     0, max_charge_rate_kw), 
+            # "ev_es_power_available" : (
+            #     0, max_es_power), 
+            # "ev_es_power_consumed" : (
+            #     0, max_charge_rate_kw), 
             "real_power_unserved": (
                 0, self._df["energy_required_kwh"].max()),
             "current_cost" : (
                 0, max_charge_cost),
+            "ev_grid_power_available" : (
+                0, max_grid_power), 
+            "ev_grid_power_consumed" : (
+                0, max_charge_rate_kw)
         })
 
         # Construct the gym spaces.
@@ -123,7 +140,7 @@ class HSEVChargingEnv(ComponentEnv):
         #print(self._obs_labels)
 
 
-    def reset(self, **kwargs) -> Tuple[dict, dict]:
+    def reset(self, *, seed=None, options=None, **kwargs) -> Tuple[dict, dict]:
        
         self.time_index = 0 
         self.time = self.simulation_times[self.time_index]
@@ -167,17 +184,23 @@ class HSEVChargingEnv(ComponentEnv):
     def step_reward(self, **kwargs) -> Tuple[float, dict]:
         """Return a non-zero reward here if you want to use RL."""
 
-        step_cost = self.current_cost * self._real_power
+        step_cost = self.current_cost * self._real_power # ( gridcost x grid usage + solar*solar usage + batter x batteryusage)
 
         step_meta = {}
-        
-        reward = -(step_cost + self.unserved_penalty * self.state["real_power_unserved"]**2)
+        reward = 0
+
+        reward = -np.exp(step_cost+kwargs['max_grid_cost'] * self.state["real_power_unserved"])
+        #reward = -(step_cost+kwargs['max_grid_cost'] * self.state["real_power_unserved"])
+        #reward = -(1+ reward)**3
         
         step_meta["device_id"] = self.name
         step_meta["timestamp"] = kwargs['timestamp']
         step_meta["cost"] = step_cost
         step_meta["reward"] = reward
-        return reward, {"step_meta": step_meta}
+        
+        kwargs.update({"step_meta": step_meta})
+
+        return reward, kwargs
    
     def step(self, action: np.ndarray = None, **kwargs) -> Tuple[np.ndarray, float, bool, dict]:
 
@@ -258,13 +281,13 @@ class HSEVChargingEnv(ComponentEnv):
         
 
         # Update the state dict.
-        self._update("time", self.time)
-        self._update("num_active_vehicles", self.vehicle_multiplier * len(charging_vehicles))
-        self._update("real_power_consumed", self.vehicle_multiplier * real_power_consumed)
-        self._update("real_power_demand", self.vehicle_multiplier * real_power_demand)
-        self._update(
-            "mean_charge_rate_deficit",
-            0 if len(charge_rate_deficit) == 0 else np.mean(charge_rate_deficit))
+        # self._update("time", self.time)
+        # self._update("num_active_vehicles", self.vehicle_multiplier * len(charging_vehicles))
+        # self._update("real_power_consumed", self.vehicle_multiplier * real_power_consumed)
+        # self._update("real_power_demand", self.vehicle_multiplier * real_power_demand)
+        # self._update(
+        #     "mean_charge_rate_deficit",
+        #     0 if len(charge_rate_deficit) == 0 else np.mean(charge_rate_deficit))
         
         
         # Update the real power attribute needed for component envs.
@@ -308,22 +331,35 @@ class HSEVChargingEnv(ComponentEnv):
             kwargs['es_power']=max(0.0, battery_capacity-battery_power_consumed)
             kwargs['grid_power']=max(0.0, grid_capacity-grid_power_consumed)
 
+            kwargs['es_power_consumed']=battery_power_consumed
+            kwargs['solar_power_consumed']=solar_power_consumed
+            kwargs['grid_power_consumed']=grid_power_consumed
+
+        # Update Observation space with availability and consumption information.
+        # attach values to observation here
         self._update("current_cost", self.current_cost)
+        # self._update("ev_pv_power_available", kwargs['pv_power'])
+        # self._update("ev_pv_power_consumed", solar_power_consumed)
+        # self._update("ev_es_power_available", kwargs['es_power'])
+        # self._update("ev_es_power_consumed", battery_power_consumed)
+        self._update("ev_grid_power_available", kwargs['grid_power'])
+        self._update("ev_grid_power_consumed", grid_power_consumed)
 
         # Get the return values
         obs, meta = self.get_obs(**kwargs)
+
         rew, rew_meta = self.step_reward(**kwargs)
         rew_meta['step_meta']['action'] = action.tolist()
         rew_meta['step_meta']['solar_power_consumed'] = solar_power_consumed
         rew_meta['step_meta']['es_power_consumed'] = battery_power_consumed
         rew_meta['step_meta']['grid_power_consumed'] = grid_power_consumed
-        rew_meta['step_meta']['device_custom_info'] = {'power_ask': power , 'power_unserved': unserved, 'charging_vehicle':len(self.charging_vehicles), 'vehicle_charged': len(self.departed_vehicles), 'solar_power_available': solar_capacity-solar_power_consumed, 'es_power_available':battery_capacity-battery_power_consumed, 'grid_power_available':grid_capacity-grid_power_consumed}
+        rew_meta['step_meta']['device_custom_info'] = {'power_ask': power , 'power_unserved': unserved, 'charging_vehicle':len(self.charging_vehicles), 'vehicle_charged': len(self.departed_vehicles), 'solar_power_available': kwargs['pv_power'], 'es_power_available':kwargs['es_power'], 'grid_power_available':kwargs['grid_power']}
 
         done = self.is_terminal()
 
         meta.update(rew_meta)
         self.time_index += 1
-        return obs, rew, done, meta
+        return obs, rew, done, False, meta
     
 
     def _update(self, key, value):
